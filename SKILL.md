@@ -169,8 +169,13 @@ python3 scripts/fetch-web.py https://protected-site.com --stealth
 - `python3 scripts/video.py <url>` - Download video + extract captions
 - `python3 scripts/fetch-web.py <url>` - Fetch web article to .raw/
 - `python3 scripts/search.py <query>` - Search wiki (BM25 + PageRank + vector)
-- `python3 scripts/lint.py` - Check wiki health (orphans, broken links, stale notes)
+- `python3 scripts/semantic.py <query>` - Semantic search (optional, needs sentence-transformers)
+- `python3/scripts/lint.py` - Check wiki health (orphans, broken links, stale notes)
 - `python3 scripts/lint.py --deep` - Deep lint (+ weak evidence, drift detection)
+- `python3 scripts/gaps.py` - Detect knowledge gaps (undefined concepts, weak areas)
+- `python3 scripts/resolve.py list` - List unresolved contradictions
+- `python3/scripts/resolve.py resolve <file>` - Mark contradiction as resolved
+- `python3/scripts/source-score.py` - Score source reliability (A-D grading)
 - `python3 scripts/index.py` - Rebuild index-tags.md and index-topics.md
 - `python3 scripts/query.py <question>` - Find relevant pages for a question
 - `python3 scripts/export.py` - Export wiki as single markdown file
