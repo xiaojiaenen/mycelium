@@ -257,6 +257,55 @@ Health check the wiki. Two modes:
 11. **Concept consolidation** — detect near-duplicate concepts and suggest merge
 12. **Update indexes** — regenerate `index-tags.md` and `index-topics.md`
 
+### Knowledge Gap Detection
+
+```bash
+python3 scripts/gaps.py --dir <wiki_dir>
+```
+
+Finds: undefined concepts (referenced but no page), weak evidence, orphan concepts, disconnected concepts. Automatically runs during `lint --deep` and after `auto_ingest.py`.
+
+### Contradiction Resolution
+
+```bash
+python3 scripts/resolve.py list                           # List unresolved contradictions
+python3 scripts/resolve.py resolve <file> -r "结论"       # Mark as resolved
+```
+
+### Source Reliability Scoring
+
+```bash
+python3 scripts/source-score.py --dir <wiki_dir>
+```
+
+Scores each source on: type, structure, citations, cross-references, metadata completeness, status. Outputs A-D grades. Automatically runs after `auto_ingest.py`.
+
+### Evolution Timeline
+
+```bash
+python3 scripts/timeline.py --dir <wiki_dir>
+```
+
+Generates `wiki/meta/evolution-timeline.png` showing concept version growth and confidence vs evidence. Requires matplotlib. Automatically runs after `auto_ingest.py`.
+
+### Statistics Dashboard
+
+```bash
+python3 scripts/stats.py --dir <wiki_dir>                # Generate HTML dashboard
+python3 scripts/stats.py --dir <wiki_dir> --json          # Output stats as JSON
+```
+
+Generates `wiki/meta/dashboard.html` with note counts, type distribution, tag cloud, monthly growth.
+
+### Semantic Search (Optional)
+
+```bash
+python3 scripts/semantic.py "query" --enable              # Requires sentence-transformers
+python3 scripts/search.py "query" --mode semantic         # Also works
+```
+
+Falls back to BM25 if sentence-transformers not installed. Disabled by default to avoid heavy dependency.
+
 ## Note Types
 
 | Type | Location | Purpose |
