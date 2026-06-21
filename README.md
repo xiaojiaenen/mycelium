@@ -1,88 +1,88 @@
 # Mycelium 🍄
 
-> *Like the fungal network beneath a forest — invisible, persistent, connecting everything.*
+> *像森林地下的菌丝网络——看不见，但无处不在，连接万物。*
 
-A persistent, compounding knowledge base powered by LLM. Inspired by Karpathy's [LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
+一个基于 LLM 的**持久化、持续复利**的知识库系统。灵感来自 Karpathy 的 [LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)。
 
-## What Is This?
+## 这是什么？
 
-A system for building knowledge bases with LLMs. Instead of RAG (retrieve from raw docs each time), you incrementally build a structured wiki that gets richer with every source added.
+传统 RAG 每次都从原始文档重新检索。Mycelium 不同：你增量构建一个结构化 Wiki，**每加一篇素材，知识库就更厚一层**。
 
 ```
 人类：思考、提问、决定方向
 LLM：整理、关联、维护一致性
 ```
 
-The wiki is a **persistent, compounding artifact**. Cross-references are pre-built, not computed at query time. Every query and ingest makes the wiki richer.
+Wiki 是一个**持久复利的 artifact**。交叉引用预建好，矛盾自动标记，综合反映所有已读内容。你很少自己写 Wiki——LLM 负责一切。
 
-> **The Metaphor:** Obsidian is the IDE. The LLM is the programmer. The wiki is the codebase. You browse and review; the LLM writes and maintains.
+> **隐喻：** Obsidian 是 IDE，LLM 是程序员，Wiki 是代码库。你浏览和审查，LLM 编写和维护。
 
-## Quick Start
+## 快速开始
 
 ```bash
-# Initialize a new wiki in current directory (auto git init)
-bash scripts/init.sh "My Research Wiki"
+# 1. 初始化知识库（自动 git init）
+bash scripts/init.sh "我的研究笔记"
 
-# Add source files
-cp article.txt .raw/
+# 2. 放入素材
+cp article.pdf .raw/
 
-# Tell Claude to ingest
-"ingest article.txt"
+# 3. 告诉 Claude
+"ingest article.pdf"
 
-# Ask questions (answer auto-filed to wiki)
-"query: 关于X你都知道什么"
+# 4. 提问（回答自动存档）
+"query: 关于 Transformer 你都知道什么"
 
-# Deep health check
+# 5. 深度健康检查
 "lint --deep"
 ```
 
-## Directory Structure
+## 目录结构
 
 ```
 wiki/
-├── .raw/              # Source files (immutable)
+├── .raw/              # 原始素材（不可修改）
 ├── wiki/
-│   ├── index.md       # Master catalog
-│   ├── index-tags.md  # Auto-generated tag index
-│   ├── index-topics.md # Auto-generated topic clusters
-│   ├── log.md         # Operation log
-│   ├── hot.md         # Recent context cache
-│   ├── sources/       # Source summaries
-│   ├── concepts/      # Concept explanations (with evolution tracking)
-│   ├── entities/      # People, orgs, products
-│   ├── comparisons/   # Side-by-side analyses
-│   ├── contradictions/ # Cross-source conflicts
-│   ├── questions/     # Filed answers
-│   └── meta/          # Slides, charts, generated artifacts
-│       ├── slides/    # Marp slide decks
-│       └── charts/    # matplotlib charts
-└── CLAUDE.md          # Wiki rules
+│   ├── index.md       # 主索引
+│   ├── index-tags.md  # 标签索引（自动生成）
+│   ├── index-topics.md # 主题聚类（自动生成）
+│   ├── log.md         # 操作日志
+│   ├── hot.md         # 近期上下文缓存
+│   ├── sources/       # 源文档摘要
+│   ├── concepts/      # 概念解释（带版本演进）
+│   ├── entities/      # 人物/组织/产品
+│   ├── comparisons/   # 对比分析
+│   ├── contradictions/ # 跨来源矛盾
+│   ├── questions/     # 查询回答（自动存档）
+│   └── meta/          # 幻灯片、图表等生成物
+│       ├── slides/    # Marp 幻灯片
+│       └── charts/    # matplotlib 图表
+└── CLAUDE.md          # Wiki 规则
 ```
 
-## Operations
+## 核心操作
 
-### Ingest
+### 📥 Ingest — 摄入
 
-Drop source in `.raw/`, tell Claude to ingest.
+把素材放进 `.raw/`，告诉 Claude 摄入。
 
 ```bash
 cp article.pdf .raw/
 "ingest article.pdf"
 ```
 
-Claude will:
-1. Read the source
-2. Create a structured summary
-3. Extract key concepts → create/update concept pages
-4. Identify entities → create/update entity pages
-5. **Check contradictions** → create contradiction pages if found
-6. **Track concept evolution** → update version, evidence_strength, confidence
-7. Update index, index-tags, index-topics, log, hot cache
-8. **Auto-commit to git**
+LLM 会自动：
+1. 读取源文件
+2. 提取 3-5 个核心观点
+3. 创建结构化笔记（source / concept / entity）
+4. 建立 `[[wikilink]]` 交叉引用
+5. 检测矛盾 → 创建 contradiction 笔记
+6. 追踪概念演进（版本号 / 证据强度 / 置信度）
+7. 更新 index、index-tags、index-topics、log、hot cache
+8. Git 自动提交
 
-### Query
+### 🔍 Query — 查询
 
-Ask any question against the wiki. **Answers are filed back by default**.
+问任何问题。**回答默认自动存档**——每次查询都在增加知识库厚度。
 
 ```bash
 "query: 什么是注意力机制"
@@ -91,112 +91,139 @@ Ask any question against the wiki. **Answers are filed back by default**.
 "query: 发展时间线 → 画图"
 ```
 
-| Output Type | Command | Location |
-|-------------|---------|----------|
-| Question page | `query: ...` (default) | `wiki/questions/` |
-| Comparison | `→ 对比` | `wiki/comparisons/` |
-| Slide deck | `→ 幻灯片` | `wiki/meta/slides/` |
-| Chart | `→ 画图` | `wiki/meta/charts/` |
+| 输出类型 | 命令 | 存储位置 |
+|---------|------|---------|
+| 问答页 | `query: ...`（默认） | `wiki/questions/` |
+| 对比分析 | `→ 对比` | `wiki/comparisons/` |
+| 幻灯片 | `→ 幻灯片` | `wiki/meta/slides/` |
+| 图表 | `→ 画图` | `wiki/meta/charts/` |
 
-### Lint
-
-Health check the wiki. Two modes:
+### 🔬 Lint — 健康检查
 
 ```bash
-"lint"           # Standard: structural checks
-"lint --deep"    # Deep: + contradictions, knowledge gaps, research directions
+"lint"           # 标准检查：孤儿页、断链、过期笔记
+"lint --deep"    # 深度检查：+ 矛盾检测、知识空白、研究方向
 ```
 
-Deep lint adds:
-- **Contradictions** — auto-create conflict pages with both sides + sources
-- **Knowledge gaps** — concepts referenced but never defined
-- **Evidence strength** — concepts with only 1 source
-- **Research directions** — what to explore next
-- **Stale verification** — concepts not verified in 90+ days
-- **Web search suggestions** — gaps fillable by external search
-- **Index regeneration** — update tag and topic indexes
+深度检查额外包含：
+- **矛盾检测** — 自动创建冲突页面，包含双方立场 + 来源
+- **知识空白** — 引用但未定义的概念
+- **证据强度** — 只有 1 个来源的概念
+- **研究方向** — 基于现有知识建议下一步探索
+- **过期验证** — 超过 90 天未验证的概念
+- **Web search 建议** — 可通过外部搜索补全的空白
+- **索引重建** — 更新 tag 和 topic 索引
 
-### Search
+### 🔎 Search — 搜索
 
-For wikis with 100+ pages:
+100+ 页时使用内置搜索引擎：
 
 ```bash
 python3 scripts/search.py "attention mechanism"
 python3 scripts/search.py "RLHF" --mode hybrid
 python3 scripts/search.py "对比" --type comparison --top 10
+python3 scripts/search.py "transformer" --summary          # token 高效模式
+python3 scripts/search.py "RLHF" --mode vector             # 向量相似度搜索
 ```
 
-BM25 + wikilink graph analysis. Results ranked by relevance and connectivity.
+BM25 + PageRank + 向量相似度，三路混合排序。
 
-## Note Types
+## 6 种笔记类型
 
-| Type | Location | Purpose |
-|------|----------|---------|
-| source | `wiki/sources/` | Summary of a source |
-| concept | `wiki/concepts/` | Explanation of an idea (with evolution tracking) |
-| entity | `wiki/entities/` | Person/org/product |
-| comparison | `wiki/comparisons/` | Side-by-side analysis |
-| contradiction | `wiki/contradictions/` | Cross-source conflicts |
-| question | `wiki/questions/` | Filed answers |
+| 类型 | 目录 | 用途 |
+|------|------|------|
+| source | `wiki/sources/` | 源文档摘要 |
+| concept | `wiki/concepts/` | 概念解释（带版本/置信度追踪） |
+| entity | `wiki/entities/` | 人物/组织/产品 |
+| comparison | `wiki/comparisons/` | 对比分析 |
+| contradiction | `wiki/contradictions/` | 跨来源矛盾冲突 |
+| question | `wiki/questions/` | 查询回答（自动存档） |
 
-## Concept Evolution
+## 概念演进追踪
 
-Track how concepts evolve across sources:
+每次摄入新来源，自动更新概念的演进状态：
 
 ```yaml
-version: 3                    # Increment on major updates
-supersedes: [[old-version]]   # Older version this replaces
-evidence_strength: strong     # weak (1) | moderate (2-3) | strong (4+)
-confidence: 0.85             # 0-1, based on source agreement
-last_verified: 2026-06-20    # Date of last verification
+version: 3                    # 版本号，重大更新时递增
+supersedes: [[old-version]]   # 替代的旧版本
+evidence_strength: strong     # weak(1来源) | moderate(2-3) | strong(4+)
+confidence: 0.85             # 0-1，基于来源一致性
+last_verified: 2026-06-20    # 上次验证日期
 ```
 
-## Git Workflow
+## Git 工作流
 
-Every wiki is a git repository:
-- **Auto-commit** on every ingest, query, and lint
-- **Exploratory branches** for research: `git checkout -b explore/topic`
-- **Version history** of your knowledge base evolution
+每次操作自动提交，支持探索性分支：
 
-## Obsidian Integration
+```bash
+git checkout -b explore/multimodal   # 尝试新领域
+git checkout -b experiment/xyz       # 验证假设
+# 满意后合并：
+git checkout main && git merge explore/multimodal
+```
 
-Works beautifully with Obsidian:
-- **Graph View** — see knowledge structure
-- **Dataview** — query frontmatter for dynamic views
-- **Marp plugin** — render slide decks
-- **Web Clipper** — save articles to `.raw/`
-- **Git plugin** — sync across devices
+## Obsidian 集成
 
-See [docs/obsidian-guide.md](docs/obsidian-guide.md) for setup and Dataview queries.
+在 Obsidian 中打开 wiki 目录即可获得：
 
-## Documentation
+- **Graph View** — 可视化知识结构
+- **Dataview** — 10+ 预置动态查询
+- **Marp 插件** — 渲染幻灯片
+- **Web Clipper** — 浏览器一键保存文章
+- **Git 插件** — 跨设备同步
 
-- [SKILL.md](SKILL.md) — Skill instructions
-- [REFERENCE.md](REFERENCE.md) — Note templates and quality standards
-- [EXAMPLES.md](EXAMPLES.md) — Usage examples
-- [docs/obsidian-guide.md](docs/obsidian-guide.md) — Obsidian integration
-- [docs/raw-guide.md](docs/raw-guide.md) — .raw/ directory guide
-- [docs/web-fetch.md](docs/web-fetch.md) — Web scraping guide
+详见 [docs/obsidian-guide.md](docs/obsidian-guide.md)
 
-## Why This Works
+## 工具链
 
-From Karpathy:
+| 脚本 | 用途 |
+|------|------|
+| `init.sh` | 初始化知识库（自动 git init） |
+| `ingest-raw.py` | 扫描/读取/标记 .raw/ 文件 |
+| `fetch-web.py` | 网页抓取（Scrapling，绕 Cloudflare） |
+| `search.py` | BM25 + PageRank + 向量搜索 |
+| `merge-concepts.py` | 概念合并/拆分 |
+| `git-auto.sh` | 自动 git commit |
+| `raw.sh` | .raw/ 管理工具 |
+| `read-source.py` | 文件读取转 markdown |
 
-> The maintenance burden (cross-references, keeping summaries current, noting contradictions, maintaining consistency) is what kills human-maintained wikis. LLMs don't get bored, don't forget to update a cross-reference, and can touch 15 files in one pass.
+## 安装为 Claude Code Skill
 
-The human curates sources, directs analysis, asks questions, and thinks about meaning. The LLM's job is everything else.
+```bash
+# 推送到 GitHub 后
+npx skills add xiaojiaenen/mycelium
+```
 
-## vs RAG
+## Mycelium vs RAG
 
-| Aspect | RAG | Mycelium |
-|--------|-----|----------|
-| Cross-references | Built at query time | Pre-built |
-| Contradictions | Not detected | Flagged + conflict pages |
-| Synthesis | Per-query | Compounds over time |
-| Token cost | High (raw docs) | Low (wiki pages) |
-| Maintenance | None (but poor quality) | LLM handles it |
-| Version tracking | None | Concept evolution |
-| Search | Vector DB needed | BM25 + graph (built-in) |
+| 维度 | RAG | Mycelium |
+|------|-----|----------|
+| 交叉引用 | 查询时计算 | 预建好 |
+| 矛盾检测 | 不检测 | 自动标记 + 冲突页 |
+| 知识积累 | 每次从零开始 | 持续复利 |
+| Token 成本 | 高（读原始文档） | 低（读 wiki 页面） |
+| 维护 | 无（但质量差） | LLM 全权维护 |
+| 版本追踪 | 无 | 概念演进追踪 |
+| 搜索 | 需要向量数据库 | 内置 BM25 + 图搜索 |
+
+## 为什么有效？
+
+> 最累人的不是阅读和思考，而是**簿记**：更新交叉引用、保持摘要最新、标注矛盾、维护一致性。人类放弃维护 Wiki，是因为维护负担增长速度快于价值。LLM 不会厌倦，不会忘记更新交叉引用，一次操作可以触达 15 个文件。
+>
+> — Andrej Karpathy
+
+人类负责：策划素材、引导分析、提出好问题、思考意义。
+
+LLM 负责：其余一切。
+
+## 文档
+
+- [SKILL.md](SKILL.md) — 技能定义（操作指令）
+- [REFERENCE.md](REFERENCE.md) — 笔记模板 + 质量标准
+- [EXAMPLES.md](EXAMPLES.md) — 13 个使用示例
+- [docs/obsidian-guide.md](docs/obsidian-guide.md) — Obsidian 集成指南
+- [docs/raw-guide.md](docs/raw-guide.md) — .raw/ 目录使用指南
+- [docs/web-fetch.md](docs/web-fetch.md) — 网页抓取指南
 
 ## License
 
