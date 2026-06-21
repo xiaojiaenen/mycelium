@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "mycelium": {
+      "source": "xiaojiaenen/mycelium",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "74625735e4e93df56a7b0df53a3012a02a2fb67fbc796e5123fc903d98082c18"
+    },
     "skill-creator": {
       "source": "anthropics/skills",
       "sourceType": "github",

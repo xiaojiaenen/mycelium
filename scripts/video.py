@@ -135,16 +135,11 @@ def auto_select_model() -> str:
     try:
         import torch
         if torch.cuda.is_available():
-            return "large-v3"  # GPU: use best model
+            return DEFAULT_WHISPER_MODEL_GPU
     except ImportError:
         pass
 
-    # CPU only: use fast model
-    machine = platform.machine().lower()
-    if machine in ("arm64", "aarch64"):
-        return "base"  # Apple Silicon: base is fast enough
-    else:
-        return "base"  # Other CPU: use base for speed
+    return DEFAULT_WHISPER_MODEL_CPU
 
 
 def detect_language(model, audio_path: str) -> tuple:

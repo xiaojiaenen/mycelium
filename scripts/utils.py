@@ -117,7 +117,7 @@ HASH_CHUNK_SIZE = 8192
 # ── Video ────────────────────────────────────────────────
 
 DEFAULT_WHISPER_MODEL_GPU = "large-v3"
-DEFAULT_WHISPER_MODEL_CPU = "base"
+DEFAULT_WHISPER_MODEL_CPU = "small"
 DOWNLOAD_TIMEOUT = 300
 RETRY_DELAY = 5
 DEFAULT_BROWSER = "chrome"
