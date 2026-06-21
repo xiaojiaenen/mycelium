@@ -148,10 +148,9 @@ def merge_concepts(wiki_dir: str, name_a: str, name_b: str, keep: str):
     tags.extend(sec_tags)
     fm_pri['tags'] = list(set(tags))
 
-    # Build merged body
-    merged_body = body_a.rstrip()
-    merged_body += f"\n\n---\n\n## Merged from [[{name_sec}]]\n\n"
-    merged_body += body_sec.strip()
+    # Build merged body — keep primary body, add a merge note (no duplication)
+    merged_body = body_pri.rstrip()
+    merged_body += f"\n\n---\n\n> Merged from [[{name_sec}]]. Key content has been integrated above.\n"
 
     # Write merged file
     merged_content = build_frontmatter(fm_pri) + '\n\n' + merged_body
@@ -208,7 +207,16 @@ def split_concept(wiki_dir: str, name: str, into: list[str]):
 
         # Create new frontmatter
         new_fm = fm.copy()
-        new_fm['title'] = new_name.replace('-', ' ').title()
+        # Smart title: preserve common acronyms
+        ACRONYMS = {'rlhf', 'ppo', 'dpo', 'sft', 'moe', 'llm', 'gpt', 'bert', 'cv', 'nlp', 'ai', 'ml'}
+        words = new_name.replace('_', '-').split('-')
+        titled_words = []
+        for w in words:
+            if w.lower() in ACRONYMS:
+                titled_words.append(w.upper())
+            else:
+                titled_words.append(w.capitalize())
+        new_fm['title'] = ' '.join(titled_words)
         new_fm['version'] = '1'
         new_fm['supersedes'] = [name]
         new_fm['aliases'] = [name]

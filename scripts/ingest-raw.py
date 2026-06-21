@@ -252,7 +252,10 @@ def main():
         sys.exit(1)
 
     command = sys.argv[1]
-    raw_dir = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith('-') else '.raw'
+    raw_dir = '.raw'
+    # Only treat 2nd arg as raw_dir for the scan command
+    if command == 'scan' and len(sys.argv) > 2 and not sys.argv[2].startswith('-'):
+        raw_dir = sys.argv[2]
     manifest = Manifest(os.path.join(raw_dir, '.manifest.json'))
 
     if command == 'scan':
