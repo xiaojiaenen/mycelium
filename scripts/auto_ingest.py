@@ -415,6 +415,36 @@ def ingest_file(file_path: str, wiki_dir: str = "."):
     print(f"\n🎨 Step 8: Generating diagrams...")
     generate_diagrams(wiki)
 
+    # Step 8b: Score source quality
+    print(f"\n⭐ Step 8b: Scoring source...")
+    try:
+        subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "source-score.py"), "--dir", str(wiki.parent)],
+            capture_output=True
+        )
+    except Exception:
+        pass
+
+    # Step 8c: Check knowledge gaps
+    print(f"\n🔍 Step 8c: Checking gaps...")
+    try:
+        subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "gaps.py"), "--dir", str(wiki.parent)],
+            capture_output=True
+        )
+    except Exception:
+        pass
+
+    # Step 8d: Generate evolution timeline (if matplotlib available)
+    print(f"\n📈 Step 8d: Generating timeline...")
+    try:
+        subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "timeline.py"), "--dir", str(wiki.parent)],
+            capture_output=True
+        )
+    except Exception:
+        pass
+
     # Step 9: Git commit
     print(f"\n📦 Step 9: Git commit...")
     git_commit(wiki, source["name"])

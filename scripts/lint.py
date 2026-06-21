@@ -141,6 +141,18 @@ def lint(wiki_dir: str = ".", deep: bool = False):
             print(f"   {p.relative_to(base)} (evidence_strength: weak)")
         print()
 
+    # Deep: run gap detection
+    if deep:
+        print("🔍 Running gap detection...\n")
+        try:
+            import subprocess
+            subprocess.run(
+                [sys.executable, str(Path(__file__).parent / "gaps.py"), "--dir", str(base)],
+                check=True
+            )
+        except Exception as e:
+            print(f"  ⚠️  Gap detection failed: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Lint Mycelium wiki")

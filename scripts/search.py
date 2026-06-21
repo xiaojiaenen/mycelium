@@ -270,8 +270,8 @@ def search(wiki_dir: str, query: str, mode: str = 'hybrid', type_filter: str = N
 def main():
     parser = argparse.ArgumentParser(description='Search Mycelium wiki')
     parser.add_argument('query', help='Search query')
-    parser.add_argument('--mode', choices=['hybrid', 'bm25', 'links', 'vector'], default='hybrid',
-                        help='Search mode (default: hybrid)')
+    parser.add_argument('--mode', choices=['hybrid', 'bm25', 'links', 'vector', 'semantic'], default='hybrid',
+                        help='Search mode (default: hybrid, semantic needs sentence-transformers)')
     parser.add_argument('--type', dest='type_filter',
                         choices=['source', 'concept', 'entity', 'comparison', 'question', 'contradiction'],
                         help='Filter by note type')
@@ -281,6 +281,14 @@ def main():
     parser.add_argument('--wiki-dir', default='.', help='Wiki root directory (default: .)')
 
     args = parser.parse_args()
+
+    # Semantic mode: delegate to semantic.py
+    if args.mode == 'semantic':
+        import subprocess
+        cmd = [sys.executable, str(Path(__file__).parent / "semantic.py"),
+               args.query, "--dir", args.wiki_dir, "--top", str(args.top), "--enable"]
+        subprocess.run(cmd)
+        return
 
     results = search(args.wiki_dir, args.query, args.mode, args.type_filter, args.top, args.summary)
 
