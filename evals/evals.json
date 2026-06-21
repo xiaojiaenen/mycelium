@@ -1,0 +1,48 @@
+{
+  "skill_name": "mycelium",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我有一篇关于 transformer 的论文 PDF，帮我整理成知识库笔记",
+      "expected_output": "Claude 应该：1) 读取 PDF 内容 2) 创建 source note 在 wiki/sources/ 3) 提取关键概念创建 concept notes 4) 更新 index.md 和 log.md 5) 使用 wikilink 交叉引用",
+      "files": [],
+      "expectations": [
+        "Creates a source note in wiki/sources/ with proper frontmatter (type: source, title, created, tags, status)",
+        "Extracts at least 3 core insights from the source",
+        "Creates at least 2 concept notes in wiki/concepts/ with wikilinks",
+        "Updates wiki/index.md with the new source and concepts",
+        "Appends an entry to wiki/log.md in append-only format",
+        "Uses [[wikilink]] format for all cross-references",
+        "Includes source citation in the source note"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "query: 注意力机制和自注意力有什么区别",
+      "expected_output": "Claude 应该：1) 读取 wiki/index.md 2) 找到相关页面 3) 综合回答并引用来源 4) 将回答存入 wiki/questions/ 5) git commit",
+      "files": [],
+      "expectations": [
+        "Reads wiki/index.md before answering",
+        "Provides a synthesized answer with citations to wiki pages",
+        "Creates a question note in wiki/questions/ with the answer",
+        "Question note has proper frontmatter (type: question, status: answered)",
+        "Answer references specific wiki pages using [[wikilinks]]",
+        "Includes a 'sources' section citing which wiki pages informed the answer"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "lint",
+      "expected_output": "Claude 应该执行标准 lint 检查：孤儿页、断链、过期笔记、frontmatter 完整性",
+      "files": [],
+      "expectations": [
+        "Checks for orphan pages (pages with no inbound wikilinks)",
+        "Checks for broken links (wikilinks pointing to nonexistent pages)",
+        "Checks for stale notes (status: draft older than 30 days)",
+        "Checks frontmatter completeness (all required fields present)",
+        "Produces a structured report with file paths and line references",
+        "Suggests specific fixes for each issue found"
+      ]
+    }
+  ]
+}
