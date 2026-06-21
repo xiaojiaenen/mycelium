@@ -34,15 +34,23 @@ The wiki is a **persistent, compounding artifact**. Cross-references are pre-bui
 
 ## Quick Start
 
-```bash
-# Initialize a new wiki (from the skill's scripts directory)
-bash scripts/init.sh "My Research Wiki"
+Tell Claude what you want:
 
-# Or tell Claude:
-"init wiki 我的研究笔记"
+```bash
+# Initialize a new wiki
+"初始化一个研究笔记"
+
+# Ingest a source
+"ingest article.pdf"
+
+# Ask a question
+"什么是注意力机制？"
+
+# Health check
+"lint --deep"
 ```
 
-> All script paths below are relative to the skill root directory. If installed as a skill, scripts live under the skill's `scripts/` folder. If running from the project repo, they're in `scripts/`.
+Claude reads this skill file and handles everything automatically. You don't need to run scripts directly — just talk to Claude.
 
 ## Directory Structure
 
