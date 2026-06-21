@@ -123,11 +123,30 @@ When ingesting sources with images (articles, PDFs), follow this strategy:
 | PDF | .pdf | markitdown |
 | Web | .html | markitdown |
 | Subtitle | .srt, .vtt | Direct read |
-| Video | .mp4, .mkv | whisper |
-| Audio | .mp3, .wav | whisper |
+| Captions | .plain | Direct read |
+| Video | .mp4, .mkv | video.py (faster-whisper) |
+| Audio | .mp3, .wav | video.py (faster-whisper) |
 | Image | .png, .jpg | markitdown (OCR) |
 | Office | .docx, .pptx | markitdown |
 | URL | .url | Scrapling fetch |
+
+### Ingest from Video URL
+
+When the user provides a video URL (YouTube, Bilibili, 抖音, TikTok):
+
+```bash
+# Step 1: Download and extract captions
+python3 scripts/video.py "https://www.bilibili.com/video/BV1xxx" -o .raw
+
+# Step 2: Tell Claude to ingest the resulting .plain file
+"ingest 视频标题.plain"
+```
+
+The `video.py` script auto-detects hardware and selects the fastest model:
+- **GPU**: uses `large-v3` (best quality)
+- **CPU**: uses `base` (fast, good enough for most content)
+
+Output formats: `plain` (default, best for LLM), `srt`, `txt`
 
 ### Fetch Web Articles
 

@@ -14,6 +14,9 @@ import subprocess
 import platform
 from pathlib import Path
 
+# Fix OpenMP conflict on macOS
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 HF_MIRROR = "https://hf-mirror.com"
 MAX_RETRIES = 3
 
@@ -124,8 +127,6 @@ def _load(model_size: str, device: str = "auto"):
             import torch
             if torch.cuda.is_available():
                 device, compute_type = "cuda", "float16"
-            elif platform.machine() == "arm64" and platform.system() == "Darwin":
-                device, compute_type = "cpu", "int8"
             else:
                 device, compute_type = "cpu", "int8"
         except ImportError:
@@ -136,6 +137,23 @@ def _load(model_size: str, device: str = "auto"):
         compute_type = "int8"
 
     return WhisperModel(model_size, device=device, compute_type=compute_type)
+
+
+def auto_select_model() -> str:
+    """Select appropriate model based on hardware."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "large-v3"  # GPU: use best model
+    except ImportError:
+        pass
+
+    # CPU only: use fast model
+    machine = platform.machine().lower()
+    if machine in ("arm64", "aarch64"):
+        return "base"  # Apple Silicon: base is fast enough
+    else:
+        return "base"  # Other CPU: use base for speed
 
 
 def detect_language(model, audio_path: str) -> tuple:
@@ -215,8 +233,18 @@ def extract(video_path: str, language: str = None, model_size: str = "large-v3",
 
     print(f"[transcribe] Transcribing (language: {language})...")
     start_time = time.time()
-    segments, _ = model.transcribe(video_path, language=language)
-    segments_list = list(segments)
+    segments, info = model.transcribe(video_path, language=language)
+
+    # Stream segments with progress
+    segments_list = []
+    for seg in segments:
+        segments_list.append(seg)
+        if len(segments_list) % 50 == 0:
+            elapsed = time.time() - start_time
+            print(f"[transcribe]   ... {len(segments_list)} segments ({elapsed:.0f}s)")
+
+    elapsed = time.time() - start_time
+    print(f"[transcribe] Done: {len(segments_list)} segments in {elapsed:.0f}s")
 
     if post_process:
         original = len(segments_list)
@@ -243,8 +271,8 @@ def main():
                         help="Video file paths or URLs (YouTube/Bilibili/抖音/TikTok)")
     parser.add_argument("-l", "--language", default=None,
                         help="Language code (auto-detect if not specified)")
-    parser.add_argument("-m", "--model", default="large-v3",
-                        help="Model: base/small/medium/large-v3 (default: large-v3)")
+    parser.add_argument("-m", "--model", default="auto",
+                        help="Model: base/small/medium/large-v3/auto (default: auto — picks fast model for your hardware)")
     parser.add_argument("-f", "--format", default="plain",
                         choices=["srt", "txt", "plain"],
                         help="Output format (default: plain, best for LLM ingest)")
@@ -261,12 +289,18 @@ def main():
         print("Error: --output-name cannot be used with multiple sources")
         sys.exit(1)
 
+    # Auto-select model if needed
+    model_size = args.model
+    if model_size == "auto":
+        model_size = auto_select_model()
+        print(f"[model] Auto-selected: {model_size}")
+
     for source in args.sources:
         try:
             extract(
                 source,
                 language=args.language,
-                model_size=args.model,
+                model_size=model_size,
                 output_format=args.format,
                 device=args.device,
                 output_dir=args.output_dir,
