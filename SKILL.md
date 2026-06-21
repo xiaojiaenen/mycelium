@@ -23,6 +23,25 @@ description: >
 
 A persistent, compounding knowledge base powered by LLM. Inspired by Karpathy's LLM Wiki pattern.
 
+## Script Location
+
+All scripts are in the **skill's `scripts/` directory**, NOT in the user's working directory.
+
+```bash
+# Find the skill directory (auto-detect)
+SKILL_DIR="$(dirname "$(readlink -f "$(which mycelium 2>/dev/null || echo ~/.claude/skills/mycelium)")")"
+
+# Or use the known path
+SKILL_DIR=~/.claude/skills/mycelium
+
+# Always call scripts with full path:
+python3 $SKILL_DIR/scripts/init.py "My Wiki" --dir /path/to/wiki
+python3 $SKILL_DIR/scripts/auto_ingest.py /path/to/file.pdf --dir /path/to/wiki
+python3 $SKILL_DIR/scripts/search.py "query" --wiki-dir /path/to/wiki
+```
+
+**Wiki can be in ANY directory** — use `--dir` or `--wiki-dir` to specify. The wiki is NOT required to be in the skill directory.
+
 ## Core Concept
 
 ```
@@ -34,10 +53,10 @@ The wiki is a **persistent, compounding artifact**. Cross-references are pre-bui
 
 ## Quick Start
 
-Tell Claude what you want:
+Tell Claude what you want. Wiki can be in **any directory** — Claude will use the skill's scripts with `--dir` pointing to your wiki.
 
 ```bash
-# Initialize a new wiki
+# Initialize a new wiki (in current directory or specify path)
 "初始化一个研究笔记"
 
 # Ingest a source
@@ -50,7 +69,7 @@ Tell Claude what you want:
 "lint --deep"
 ```
 
-Claude reads this skill file and handles everything automatically. You don't need to run scripts directly — just talk to Claude.
+Claude reads this skill file and handles everything automatically. Claude will find the skill's `scripts/` directory and pass `--dir` to point at your wiki location.
 
 ## Directory Structure
 
