@@ -14,6 +14,22 @@ npx skills add xiaojiaenen/mycelium
 
 装完就能用。不需要配置，不需要跑脚本。
 
+### 依赖安装（按需）
+
+```bash
+# 基础（文件读取）
+pip install "markitdown[pdf,docx,pptx,html,xlsx]"
+
+# 视频转写
+pip install faster-whisper yt-dlp
+
+# 网页抓取
+pip install "scrapling[all]"
+
+# 全部装
+pip install -e ".[all]"
+```
+
 ## 怎么用？
 
 装好后直接跟 Claude 说人话：

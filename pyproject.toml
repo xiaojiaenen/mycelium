@@ -1,0 +1,29 @@
+[project]
+name = "mycelium"
+version = "0.1.0"
+description = "持久化复利知识库 — Claude Code Skill"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+
+dependencies = [
+    "markitdown[pdf,docx,pptx,html,xlsx]",
+]
+
+[project.optional-dependencies]
+video = [
+    "faster-whisper",
+    "yt-dlp",
+]
+web = [
+    "scrapling[all]",
+]
+all = [
+    "markitdown[pdf,docx,pptx,html,xlsx]",
+    "faster-whisper",
+    "yt-dlp",
+    "scrapling[all]",
+]
+dev = [
+    "pytest",
+]
