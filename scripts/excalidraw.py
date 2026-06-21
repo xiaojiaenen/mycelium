@@ -3,28 +3,19 @@
 Generate Excalidraw diagrams from wiki concept maps.
 Creates .excalidraw files that can be opened in Obsidian Excalidraw plugin.
 """
-import re
 import json
 import argparse
 from pathlib import Path
-from collections import defaultdict
 
-
-def parse_frontmatter(content: str) -> dict:
-    match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return {}
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            fm[key.strip()] = val
-    return fm
-
-
-def extract_wikilinks(content: str) -> list:
-    return re.findall(r'\[\[([^\]]+)\]\]', content)
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import (
+    EXCALIDRAW_SOURCE, EXCALIDRAW_CANVAS_WIDTH, EXCALIDRAW_CANVAS_HEIGHT,
+    EXCALIDRAW_LAYOUT_RADIUS, EXCALIDRAW_SIMULATION_ITERATIONS,
+    EXCALIDRAW_REPULSION, EXCALIDRAW_FORCE_STEP, EXCALIDRAW_IDEAL_EDGE,
+    EXCALIDRAW_EDGE_ELASTICITY, TYPE_COLORS,
+    parse_frontmatter, extract_wikilinks,
+)
 
 
 def build_graph(wiki_dir: Path) -> dict:

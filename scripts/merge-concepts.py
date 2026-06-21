@@ -208,15 +208,8 @@ def split_concept(wiki_dir: str, name: str, into: list[str]):
         # Create new frontmatter
         new_fm = fm.copy()
         # Smart title: preserve common acronyms
-        ACRONYMS = {'rlhf', 'ppo', 'dpo', 'sft', 'moe', 'llm', 'gpt', 'bert', 'cv', 'nlp', 'ai', 'ml'}
-        words = new_name.replace('_', '-').split('-')
-        titled_words = []
-        for w in words:
-            if w.lower() in ACRONYMS:
-                titled_words.append(w.upper())
-            else:
-                titled_words.append(w.capitalize())
-        new_fm['title'] = ' '.join(titled_words)
+        from utils import title_from_slug
+        new_fm['title'] = title_from_slug(new_name)
         new_fm['version'] = '1'
         new_fm['supersedes'] = [name]
         new_fm['aliases'] = [name]

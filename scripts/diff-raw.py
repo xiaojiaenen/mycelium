@@ -4,28 +4,9 @@ import json
 import argparse
 from pathlib import Path
 
-SUPPORTED_EXTENSIONS = {
-    # Text
-    '.txt', '.md', '.markdown', '.rst',
-    # Documents
-    '.pdf', '.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls',
-    # Web
-    '.html', '.htm', '.mhtml',
-    # Data
-    '.csv', '.json', '.xml', '.yaml', '.yml',
-    # Subtitles / Captions
-    '.srt', '.vtt', '.ass', '.sub', '.plain',
-    # Ebooks
-    '.epub',
-    # Images (OCR)
-    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff',
-    # Audio
-    '.mp3', '.wav', '.m4a', '.flac', '.ogg',
-    # Video
-    '.mp4', '.mkv', '.webm', '.avi', '.mov',
-    # Archives
-    '.zip',
-}
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import SUPPORTED_EXTENSIONS
 
 MANIFEST_FILE = ".manifest.json"
 

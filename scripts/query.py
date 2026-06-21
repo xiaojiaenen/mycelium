@@ -6,24 +6,10 @@ Reads index, finds relevant pages, returns context for LLM synthesis.
 import re
 import argparse
 from pathlib import Path
-from collections import defaultdict
 
-
-def parse_frontmatter(content: str) -> dict:
-    match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return {}
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            fm[key.strip()] = val
-    return fm
-
-
-def extract_wikilinks(content: str) -> set:
-    return set(re.findall(r'\[\[([^\]]+)\]\]', content))
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import parse_frontmatter, extract_wikilinks
 
 
 def query(wiki_dir: str, question: str):

@@ -3,20 +3,10 @@
 import re
 import argparse
 from pathlib import Path
-from datetime import date
 
-
-def parse_frontmatter(content: str) -> dict:
-    match = re.match(r'^---\n(.*?)\n---\n?(.*)', content, re.DOTALL)
-    if not match:
-        return {}, content
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            fm[key.strip()] = val
-    return fm, match.group(2)
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import TODAY, TYPE_EMOJI, parse_frontmatter
 
 
 def collect_notes(wiki_dir: Path) -> dict:

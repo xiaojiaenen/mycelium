@@ -17,23 +17,14 @@ from pathlib import Path
 # Fix OpenMP conflict on macOS
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
-HF_MIRROR = "https://hf-mirror.com"
 MAX_RETRIES = 3
 
-URL_PATTERNS = {
-    "bilibili": r"bilibili\.com/video/",
-    "youtube": r"(youtube\.com/watch|youtu\.be/)",
-    "douyin": r"douyin\.com/video/",
-    "tiktok": r"tiktok\.com/",
-}
-
-
-def is_url(text: str) -> bool:
-    return text.startswith("http://") or text.startswith("https://")
-
-
-def is_video_url(url: str) -> bool:
-    return any(re.search(p, url) for p in URL_PATTERNS.values())
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import (
+    VIDEO_URL_PATTERNS, DEFAULT_WHISPER_MODEL_GPU, DEFAULT_WHISPER_MODEL_CPU,
+    DOWNLOAD_TIMEOUT, RETRY_DELAY, DEFAULT_BROWSER, FILLERS,
+    HF_MIRROR, is_url, is_video_url,
+)
 
 
 def check_yt_dlp() -> bool:
@@ -60,12 +51,12 @@ def download_video(url: str, output_dir: str = ".") -> str:
             if platform.system() != "Windows":
                 try:
                     cmd.insert(1, "--cookies-from-browser")
-                    cmd.insert(2, "chrome")
+                    cmd.insert(2, DEFAULT_BROWSER)
                 except Exception:
                     pass
 
             result = subprocess.run(cmd, capture_output=True, text=True,
-                                    check=True, timeout=300)
+                                    check=True, timeout=DOWNLOAD_TIMEOUT)
 
             for line in result.stdout.split("\n"):
                 if "[download] Destination:" in line:
@@ -207,7 +198,7 @@ def write_plain(segments: list, output_file: str):
             f.write(seg.text.strip() + "\n")
 
 
-def extract(video_path: str, language: str = None, model_size: str = "large-v3",
+def extract(video_path: str, language: str = None, model_size: str = DEFAULT_WHISPER_MODEL_GPU,
             output_format: str = "srt", device: str = "auto", post_process: bool = True,
             output_dir: str = None, output_name: str = None) -> str:
     """Extract captions from video file or URL."""

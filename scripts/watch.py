@@ -7,21 +7,10 @@ import os
 import sys
 import time
 import argparse
-import hashlib
 from pathlib import Path
 
-SUPPORTED_EXTENSIONS = {
-    '.txt', '.md', '.markdown', '.rst',
-    '.pdf', '.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls',
-    '.html', '.htm', '.mhtml',
-    '.csv', '.json', '.xml', '.yaml', '.yml',
-    '.srt', '.vtt', '.ass', '.sub', '.plain',
-    '.epub',
-    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff',
-    '.mp3', '.wav', '.m4a', '.flac', '.ogg',
-    '.mp4', '.mkv', '.webm', '.avi', '.mov',
-    '.zip',
-}
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import SUPPORTED_EXTENSIONS, file_hash
 
 MANIFEST_FILE = ".manifest.json"
 

@@ -1,28 +1,16 @@
 #!/usr/bin/env python3
 """Lint Mycelium wiki: check orphans, broken links, stale notes, frontmatter."""
-import re
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 
-
-def parse_frontmatter(content: str) -> dict:
-    match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return {}
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            if val.startswith('[') and val.endswith(']'):
-                val = [v.strip().strip('"').strip("'") for v in val[1:-1].split(',') if v.strip()]
-            fm[key.strip()] = val
-    return fm
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import parse_frontmatter, extract_wikilinks, STALE_THRESHOLD_DAYS
 
 
-def extract_wikilinks(content: str) -> set:
-    return set(re.findall(r'\[\[([^\]]+)\]\]', content))
+def extract_wikilinks_set(content: str) -> set:
+    return set(extract_wikilinks(content))
 
 
 def find_note_path(wiki_dir: Path, name: str) -> Path | None:
@@ -63,7 +51,7 @@ def lint(wiki_dir: str = ".", deep: bool = False):
             fm = parse_frontmatter(content)
             name = md_file.stem
             all_notes[name] = {"path": md_file, "frontmatter": fm, "subdir": subdir}
-            links = extract_wikilinks(content)
+            links = extract_wikilinks_set(content)
             all_links[md_file] = links
             for link in links:
                 if link not in inbound_links:
@@ -91,7 +79,7 @@ def lint(wiki_dir: str = ".", deep: bool = False):
         if status == "draft" and created:
             try:
                 created_date = datetime.strptime(created, "%Y-%m-%d")
-                if (today - created_date).days > 30:
+                if (today - created_date).days > STALE_THRESHOLD_DAYS:
                     issues["stale"].append(info["path"])
             except ValueError:
                 pass

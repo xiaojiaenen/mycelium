@@ -1,29 +1,12 @@
 #!/usr/bin/env python3
 """Rebuild wiki indexes: index-tags.md and index-topics.md."""
-import re
 import argparse
 from pathlib import Path
 from collections import defaultdict
-from datetime import date
 
-
-def parse_frontmatter(content: str) -> dict:
-    match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return {}
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            if val.startswith('[') and val.endswith(']'):
-                val = [v.strip().strip('"').strip("'") for v in val[1:-1].split(',') if v.strip()]
-            fm[key.strip()] = val
-    return fm
-
-
-def extract_wikilinks(content: str) -> list:
-    return re.findall(r'\[\[([^\]]+)\]\]', content)
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import TODAY, parse_frontmatter, extract_wikilinks
 
 
 def rebuild_tags_index(wiki_dir: Path):
@@ -44,12 +27,11 @@ def rebuild_tags_index(wiki_dir: Path):
             for tag in tags:
                 tag_notes[tag].append(f"[[{md_file.stem}]]")
 
-    today = date.today().isoformat()
     lines = [
         "---",
         "type: meta",
         'title: "Tag Index"',
-        f"created: {today}",
+        f"created: {TODAY}",
         "tags:",
         "  - meta",
         "  - index",
@@ -59,7 +41,7 @@ def rebuild_tags_index(wiki_dir: Path):
         "",
         "# Tag Index",
         "",
-        f"Last updated: {today}",
+        f"Last updated: {TODAY}",
         "",
         "---",
         "",

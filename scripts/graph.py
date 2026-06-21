@@ -3,27 +3,13 @@
 Generate interactive knowledge graph as standalone HTML.
 Uses Cytoscape.js for visualization. No dependencies needed.
 """
-import re
 import json
 import argparse
 from pathlib import Path
 
-
-def parse_frontmatter(content: str) -> dict:
-    match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-    if not match:
-        return {}
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            fm[key.strip()] = val
-    return fm
-
-
-def extract_wikilinks(content: str) -> list:
-    return re.findall(r'\[\[([^\]]+)\]\]', content)
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import TYPE_COLORS, parse_frontmatter, extract_wikilinks
 
 
 def build_graph(wiki_dir: Path) -> dict:

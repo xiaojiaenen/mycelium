@@ -12,73 +12,19 @@ import os
 import re
 import sys
 import json
-import hashlib
 import subprocess
 import argparse
 from pathlib import Path
 from datetime import date, datetime
-from collections import Counter
 
-TODAY = date.today().isoformat()
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import (
+    TODAY, SUPPORTED_EXTENSIONS, ACRONYMS, MAX_SLUG_LENGTH,
+    parse_frontmatter, extract_wikilinks, extract_keywords, slugify,
+    title_from_slug, file_hash, is_video_url, is_url,
+)
+
 SCRIPTS_DIR = Path(__file__).parent
-
-
-# ── Utility ──────────────────────────────────────────────
-
-def parse_frontmatter(content: str) -> tuple:
-    match = re.match(r'^---\n(.*?)\n---\n?(.*)', content, re.DOTALL)
-    if not match:
-        return {}, content
-    fm = {}
-    for line in match.group(1).split('\n'):
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            fm[key.strip()] = val
-    return fm, match.group(2)
-
-
-def extract_wikilinks(content: str) -> list:
-    return re.findall(r'\[\[([^\]]+)\]\]', content)
-
-
-def extract_keywords(text: str, top_n: int = 10) -> list:
-    """Extract keywords from text (simple TF approach)."""
-    # Chinese + English word extraction
-    words = []
-    # English words (3+ chars)
-    words.extend(re.findall(r'[a-zA-Z]{3,}', text.lower()))
-    # Chinese 2-4 char terms
-    words.extend(re.findall(r'[一-鿿]{2,4}', text))
-
-    # Filter stopwords
-    stopwords = {
-        'the', 'and', 'for', 'that', 'this', 'with', 'from', 'are', 'was',
-        'were', 'been', 'have', 'has', 'had', 'not', 'but', 'can', 'will',
-        'just', 'also', 'than', 'its', 'into', 'more', 'some', 'would',
-        'could', 'other', 'which', 'their', 'about', 'would', 'there',
-        '这些', '那些', '一个', '可以', '没有', '不是', '就是', '已经',
-        '因为', '所以', '如果', '但是', '或者', '而且', '虽然', '只是',
-    }
-    words = [w for w in words if w not in stopwords]
-
-    counter = Counter(words)
-    return [w for w, _ in counter.most_common(top_n)]
-
-
-def slugify(name: str) -> str:
-    """Convert name to filename-safe slug."""
-    slug = name.lower().replace(' ', '-').replace('_', '-')
-    slug = re.sub(r'[^a-z0-9一-鿿-]', '', slug)
-    return slug[:50]
-
-
-def file_hash(file_path: str) -> str:
-    h = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 # ── Step 1: Read Source ──────────────────────────────────
@@ -124,15 +70,7 @@ def read_source(file_path: str) -> dict:
 
 def read_url(url: str) -> dict:
     """Read URL content via fetch-web.py or detect video."""
-    import re as _re
-    video_patterns = [
-        r"bilibili\.com/video/",
-        r"(youtube\.com/watch|youtu\.be/)",
-        r"douyin\.com/video/",
-        r"tiktok\.com/",
-    ]
-
-    if any(_re.search(p, url) for p in video_patterns):
+    if is_video_url(url):
         return {"type": "video", "url": url}
 
     # Try fetch-web.py
@@ -509,8 +447,7 @@ def ingest_all(wiki_dir: str = "."):
         manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
 
     # Find new files
-    supported = {'.txt', '.md', '.pdf', '.docx', '.pptx', '.html', '.srt', '.vtt',
-                 '.plain', '.epub', '.png', '.jpg', '.mp3', '.wav', '.mp4', '.mkv'}
+    supported = SUPPORTED_EXTENSIONS
 
     new_files = []
     for f in sorted(raw_dir.iterdir()):
