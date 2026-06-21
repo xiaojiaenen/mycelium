@@ -162,12 +162,19 @@ python3 scripts/fetch-web.py https://protected-site.com --stealth
 ```
 
 **Scripts:**
+- `python3 scripts/ingest.py <file>` - Read file and show content for LLM processing
+- `python3 scripts/ingest.py` - List all uningested files in .raw/
+- `python3 scripts/ingest.py <url>` - Check URL and suggest tool (video/fetch)
+- `python3 scripts/video.py <url>` - Download video + extract captions
 - `python3 scripts/fetch-web.py <url>` - Fetch web article to .raw/
-- `python3 scripts/ingest-raw.py scan` - Scan for new/modified files
-- `python3 scripts/ingest-raw.py read <file>` - Read file content (auto-convert to markdown)
-- `python3 scripts/ingest-raw.py new` - List new files only
-- `python3 scripts/ingest-raw.py mark <file> [wiki_page]` - Mark as ingested
-- `python3 scripts/search.py <query>` - Search wiki with BM25 + wikilink analysis
+- `python3 scripts/search.py <query>` - Search wiki (BM25 + PageRank + vector)
+- `python3 scripts/lint.py` - Check wiki health (orphans, broken links, stale notes)
+- `python3 scripts/lint.py --deep` - Deep lint (+ weak evidence, drift detection)
+- `python3 scripts/index.py` - Rebuild index-tags.md and index-topics.md
+- `python3 scripts/query.py <question>` - Find relevant pages for a question
+- `python3 scripts/export.py` - Export wiki as single markdown file
+- `python3 scripts/export.py -f html` - Export wiki as HTML
+- `python3 scripts/watch.py` - Watch .raw/ for new files (poll every 5s)
 
 See [docs/raw-guide.md](docs/raw-guide.md) and [docs/web-fetch.md](docs/web-fetch.md) for detailed guide.
 
