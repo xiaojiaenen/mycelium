@@ -60,6 +60,13 @@ def diff_raw(wiki_dir: str = "."):
                     ingested.add(f.stem)
                     break
 
+    # File type classification
+    READY_EXT = {'.txt', '.md', '.plain', '.srt', '.vtt'}  # LLM can read directly
+    NEEDS_PROCESS = {'.pdf', '.docx', '.pptx', '.html', '.htm', '.epub'}  # markitdown
+    NEEDS_VIDEO = {'.mp4', '.mkv', '.webm', '.avi', '.mov'}  # video.py
+    NEEDS_AUDIO = {'.mp3', '.wav', '.m4a', '.flac', '.ogg'}  # video.py
+    NEEDS_OCR = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}  # markitdown OCR
+
     new_files = []
     for name in sorted(raw_files):
         stem = Path(name).stem
@@ -72,9 +79,38 @@ def diff_raw(wiki_dir: str = "."):
     print(f"  New (to ingest):    {len(new_files)}")
 
     if new_files:
-        print(f"\n  New files:")
+        # Group by processing needed
+        ready = []
+        needs_process = []
+        needs_video = []
+
         for f in new_files:
-            print(f"    🆕 {f}")
+            ext = Path(f).suffix.lower()
+            if ext in READY_EXT:
+                ready.append(f)
+            elif ext in NEEDS_VIDEO or ext in NEEDS_AUDIO:
+                needs_video.append(f)
+            else:
+                needs_process.append(f)
+
+        if ready:
+            print(f"\n  ✅ Ready for ingest ({len(ready)}):")
+            for f in ready:
+                print(f"    {f}")
+
+        if needs_process:
+            print(f"\n  🔧 Needs processing ({len(needs_process)}):")
+            for f in needs_process:
+                ext = Path(f).suffix.lower()
+                if ext in NEEDS_OCR:
+                    print(f"    {f}  → markitdown (OCR)")
+                else:
+                    print(f"    {f}  → markitdown")
+
+        if needs_video:
+            print(f"\n  🎬 Needs transcription ({len(needs_video)}):")
+            for f in needs_video:
+                print(f"    {f}  → python3 scripts/video.py {f} -o .raw")
 
 
 def main():

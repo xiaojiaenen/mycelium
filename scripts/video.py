@@ -231,7 +231,7 @@ def extract(video_path: str, language: str = None, model_size: str = "large-v3",
     if language is None:
         language, _ = detect_language(model, video_path)
 
-    print(f"[transcribe] Transcribing (language: {language})...")
+    print(f"[transcribe] Transcribing (language: {language})...", file=sys.stderr)
     start_time = time.time()
     segments, info = model.transcribe(video_path, language=language)
 
@@ -241,10 +241,12 @@ def extract(video_path: str, language: str = None, model_size: str = "large-v3",
         segments_list.append(seg)
         if len(segments_list) % 50 == 0:
             elapsed = time.time() - start_time
-            print(f"[transcribe]   ... {len(segments_list)} segments ({elapsed:.0f}s)")
+            print(f"[transcribe]   ... {len(segments_list)} segments ({elapsed:.0f}s)",
+                  file=sys.stderr)
 
     elapsed = time.time() - start_time
-    print(f"[transcribe] Done: {len(segments_list)} segments in {elapsed:.0f}s")
+    print(f"[transcribe] Done: {len(segments_list)} segments in {elapsed:.0f}s",
+          file=sys.stderr)
 
     if post_process:
         original = len(segments_list)
@@ -283,6 +285,8 @@ def main():
                         help="Output directory")
     parser.add_argument("-n", "--output-name", default=None,
                         help="Custom output filename (single file only)")
+    parser.add_argument("--transcribe-only", action="store_true",
+                        help="Skip download, transcribe existing video file")
     args = parser.parse_args()
 
     if args.output_name and len(args.sources) > 1:
@@ -293,19 +297,34 @@ def main():
     model_size = args.model
     if model_size == "auto":
         model_size = auto_select_model()
-        print(f"[model] Auto-selected: {model_size}")
+        print(f"[model] Auto-selected: {model_size}", file=sys.stderr)
 
     for source in args.sources:
         try:
-            extract(
-                source,
-                language=args.language,
-                model_size=model_size,
-                output_format=args.format,
-                device=args.device,
-                output_dir=args.output_dir,
-                output_name=args.output_name,
-            )
+            if args.transcribe_only:
+                # Skip download, just transcribe
+                if is_url(source):
+                    print("Error: --transcribe-only cannot be used with URLs", file=sys.stderr)
+                    continue
+                extract(
+                    source,
+                    language=args.language,
+                    model_size=model_size,
+                    output_format=args.format,
+                    device=args.device,
+                    output_dir=args.output_dir,
+                    output_name=args.output_name,
+                )
+            else:
+                extract(
+                    source,
+                    language=args.language,
+                    model_size=model_size,
+                    output_format=args.format,
+                    device=args.device,
+                    output_dir=args.output_dir,
+                    output_name=args.output_name,
+                )
         except Exception as e:
             print(f"Error processing {source}: {e}", file=sys.stderr)
             continue
