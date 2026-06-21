@@ -137,6 +137,23 @@ last_verified: YYYY-MM-DD
 ### 示例2
 [具体例子]
 
+### 数学公式
+如果概念涉及数学，使用 LaTeX 语法保留原始公式：
+
+行内公式：`$\alpha + \beta = \gamma$` → $\alpha + \beta = \gamma$
+
+块级公式：
+```latex
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$
+```
+
+**规则：**
+- 从 PDF/论文中提取的公式，保留原始 LaTeX 语法
+- 不要把公式转成纯文本描述（如 "Q 乘以 K 的转置除以根号 d_k"）
+- 如果源文件没有 LaTeX（如视频字幕），用文字描述 + 补充 LaTeX
+
 ---
 
 ## 对比

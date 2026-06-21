@@ -453,6 +453,8 @@ See [REFERENCE.md](REFERENCE.md) for detailed note templates, quality standards,
 
 15. **Token-efficient search** — use `--summary` flag when searching large wikis to reduce token cost. At 100+ pages, loading full page content burns tokens without proportional value. Summary mode returns titles and one-liners, letting the LLM drill into only the relevant pages.
 
+16. **Preserve math formulas** — when ingesting content with LaTeX math, keep the original `$...$` / `$$...$$` syntax. Don't convert formulas to text descriptions. Obsidian renders LaTeX natively via MathJax. If the source has no LaTeX (e.g., video subtitles), describe the formula in text and add the LaTeX version.
+
 ## See Also
 
 - [REFERENCE.md](REFERENCE.md) — Note templates and quality standards
