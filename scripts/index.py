@@ -109,12 +109,11 @@ def rebuild_topics_index(wiki_dir: Path):
     # Sort clusters by size (largest first)
     clusters.sort(key=len, reverse=True)
 
-    today = date.today().isoformat()
     lines = [
         "---",
         "type: meta",
         'title: "Topic Clusters"',
-        f"created: {today}",
+        f"created: {TODAY}",
         "tags:",
         "  - meta",
         "  - index",
@@ -124,7 +123,7 @@ def rebuild_topics_index(wiki_dir: Path):
         "",
         "# Topic Clusters",
         "",
-        f"Last updated: {today}",
+        f"Last updated: {TODAY}",
         "",
         "---",
         "",

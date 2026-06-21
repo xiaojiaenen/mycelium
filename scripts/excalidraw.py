@@ -145,6 +145,7 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
         pos = positions[name]
         color = colors.get(info["type"], "#e9ecef")
 
+        # Rectangle (the box)
         elements.append({
             "id": eid,
             "type": "rectangle",
@@ -163,6 +164,31 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
             "version": 1,
             "versionNonce": id_counter * 1000,
             "isDeleted": False,
+            "boundElements": [{"id": f"text_{id_counter}", "type": "text"}],
+            "updated": 1,
+            "link": None,
+            "locked": False,
+        })
+        # Text element (references the rectangle)
+        text_id = f"text_{id_counter}"
+        elements.append({
+            "id": text_id,
+            "type": "text",
+            "x": pos["x"] - 55,
+            "y": pos["y"] - 15,
+            "width": 110,
+            "height": 30,
+            "strokeColor": "#1e1e1e",
+            "backgroundColor": "transparent",
+            "fillStyle": "solid",
+            "strokeWidth": 1,
+            "roughness": 1,
+            "opacity": 100,
+            "angle": 0,
+            "seed": id_counter * 1000 + 1,
+            "version": 1,
+            "versionNonce": id_counter * 1000 + 1,
+            "isDeleted": False,
             "boundElements": None,
             "updated": 1,
             "link": None,
@@ -172,7 +198,7 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
             "fontFamily": 1,
             "textAlign": "center",
             "verticalAlign": "middle",
-            "containerId": None,
+            "containerId": eid,
             "originalText": info["name"],
             "lineHeight": 1.25,
         })
