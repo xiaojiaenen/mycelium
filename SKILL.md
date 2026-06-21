@@ -100,6 +100,19 @@ cp article.txt .raw/
 8. Mark file as ingested in `.raw/.manifest`
 9. Auto-commit to git: `git commit -m "ingest: [filename]"`
 
+**URL routing (IMPORTANT):**
+When user provides a URL, check the URL pattern FIRST:
+
+| URL pattern | Tool | Command |
+|-------------|------|---------|
+| `bilibili.com/video/` | video.py | `python3 scripts/video.py "<url>" -o .raw` |
+| `youtube.com/watch` or `youtu.be/` | video.py | `python3 scripts/video.py "<url>" -o .raw` |
+| `douyin.com/video/` | video.py | `python3 scripts/video.py "<url>" -o .raw` |
+| `tiktok.com/` | video.py | `python3 scripts/video.py "<url>" -o .raw` |
+| All other URLs | fetch-web.py | `python3 scripts/fetch-web.py "<url>"` |
+
+**NEVER use fetch-web.py for video URLs** — it only scrapes the webpage metadata, not the video content.
+
 **Batch ingest:**
 ```bash
 # Ingest multiple sources at once
@@ -454,6 +467,8 @@ See [REFERENCE.md](REFERENCE.md) for detailed note templates, quality standards,
 15. **Token-efficient search** — use `--summary` flag when searching large wikis to reduce token cost. At 100+ pages, loading full page content burns tokens without proportional value. Summary mode returns titles and one-liners, letting the LLM drill into only the relevant pages.
 
 16. **Preserve math formulas** — when ingesting content with LaTeX math, keep the original `$...$` / `$$...$$` syntax. Don't convert formulas to text descriptions. Obsidian renders LaTeX natively via MathJax. If the source has no LaTeX (e.g., video subtitles), describe the formula in text and add the LaTeX version.
+
+17. **Route URLs correctly** — video URLs (bilibili/youtube/douyin/tiktok) MUST use `video.py`, NOT `fetch-web.py`. `fetch-web.py` only scrapes webpage metadata (title, tags, comments) — it cannot extract video content or captions. Using the wrong tool produces empty/useless results.
 
 ## See Also
 

@@ -5,7 +5,7 @@
       "source": "xiaojiaenen/mycelium",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "74625735e4e93df56a7b0df53a3012a02a2fb67fbc796e5123fc903d98082c18"
+      "computedHash": "80f8ae646d7153ae7a592f70b75d805d8068eb2667d827d497b78600d4b1dd83"
     },
     "skill-creator": {
       "source": "anthropics/skills",
