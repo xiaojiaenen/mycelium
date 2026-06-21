@@ -43,17 +43,11 @@ def download_video(url: str, output_dir: str = ".") -> str:
         try:
             cmd = [
                 "yt-dlp",
+                "--cookies-from-browser", DEFAULT_BROWSER,
                 "-o", os.path.join(output_dir, "%(title)s.%(ext)s"),
                 "--no-playlist",
                 url,
             ]
-            # Try with browser cookies on macOS/Linux
-            if platform.system() != "Windows":
-                try:
-                    cmd.insert(1, "--cookies-from-browser")
-                    cmd.insert(2, DEFAULT_BROWSER)
-                except Exception:
-                    pass
 
             result = subprocess.run(cmd, capture_output=True, text=True,
                                     check=True, timeout=DOWNLOAD_TIMEOUT)
