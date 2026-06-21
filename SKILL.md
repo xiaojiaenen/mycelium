@@ -162,9 +162,10 @@ python3 scripts/fetch-web.py https://protected-site.com --stealth
 ```
 
 **Scripts:**
+- `python3 scripts/auto_ingest.py <file>` - **Full auto pipeline**: read → create notes → update index → generate diagrams → git commit
+- `python3 scripts/auto_ingest.py --all` - Batch ingest all new files in .raw/
 - `python3 scripts/ingest.py <file>` - Read file and show content for LLM processing
 - `python3 scripts/ingest.py` - List all uningested files in .raw/
-- `python3 scripts/ingest.py <url>` - Check URL and suggest tool (video/fetch)
 - `python3 scripts/video.py <url>` - Download video + extract captions
 - `python3 scripts/fetch-web.py <url>` - Fetch web article to .raw/
 - `python3 scripts/search.py <query>` - Search wiki (BM25 + PageRank + vector)
