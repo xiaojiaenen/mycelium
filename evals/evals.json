@@ -43,6 +43,95 @@
         "Produces a structured report with file paths and line references",
         "Suggests specific fixes for each issue found"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "ingest https://www.bilibili.com/video/BV1xxx",
+      "expected_output": "Claude 应该使用 video.py 下载视频并提取字幕，而不是使用 fetch-web.py",
+      "files": [],
+      "expectations": [
+        "Uses video.py script (not fetch-web.py) for bilibili URL",
+        "Runs command: python3 scripts/video.py '<url>' -o .raw",
+        "Does NOT use fetch-web.py for video URLs",
+        "After download, ingests the resulting .plain file"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "lint --deep",
+      "expected_output": "Claude 应该执行深度 lint：包括知识空白检测、矛盾检测、证据强度、漂移检测",
+      "files": [],
+      "expectations": [
+        "Runs gaps.py for knowledge gap detection",
+        "Checks for contradictions between sources",
+        "Evaluates evidence strength for concepts",
+        "Detects knowledge drift (low confidence, old verification dates)",
+        "Suggests research directions",
+        "Updates index-tags.md and index-topics.md"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "对比 Transformer 和 RNN 的优缺点",
+      "expected_output": "Claude 应该创建 comparison 类型的笔记，而不是普通 question",
+      "files": [],
+      "expectations": [
+        "Creates note in wiki/comparisons/ (not wiki/questions/)",
+        "Frontmatter has type: comparison",
+        "Includes side-by-side analysis format",
+        "References existing concept notes with [[wikilinks]]",
+        "Cites sources for each comparison point"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "生成知识图谱，我想看看笔记之间的关系",
+      "expected_output": "Claude 应该调用 graph.py 生成交互式 HTML 知识图谱",
+      "files": [],
+      "expectations": [
+        "Runs python3 scripts/graph.py",
+        "Generates wiki/meta/knowledge-graph.html",
+        "Reports number of nodes and edges",
+        "Mentions opening in browser to view"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "这个 PDF 讲了什么",
+      "expected_output": "简单阅读不应触发 skill，Claude 应该直接读取并总结，不创建 wiki 结构",
+      "files": [],
+      "expectations": [
+        "Does NOT create wiki/ directory structure",
+        "Does NOT create source notes or concept notes",
+        "Simply reads and summarizes the PDF content",
+        "No git commits made"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "ingest all",
+      "expected_output": "Claude 应该批量处理 .raw/ 目录中的所有文件",
+      "files": [],
+      "expectations": [
+        "Lists all files in .raw/ directory",
+        "Processes each file sequentially",
+        "Creates source notes for each file",
+        "Updates index after each ingest",
+        "Provides progress summary at the end"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "我刚初始化了一个空 wiki，现在想导入一批论文 PDF",
+      "expected_output": "Claude 应该引导用户将 PDF 放入 .raw/ 目录，然后执行 ingest",
+      "files": [],
+      "expectations": [
+        "Checks if wiki/ directory exists",
+        "If not, runs init.py to create wiki structure",
+        "Instructs user to place PDFs in .raw/",
+        "Explains the ingest workflow",
+        "Offers to process files once placed"
+      ]
     }
   ]
 }
