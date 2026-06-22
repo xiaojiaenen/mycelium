@@ -34,6 +34,158 @@ def check_scrapling():
         return False
 
 
+def is_wechat_url(url: str) -> bool:
+    """Check if URL is a WeChat article."""
+    return 'mp.weixin.qq.com' in url
+
+
+def fetch_wechat_with_curl(url: str) -> str:
+    """Fetch WeChat article using curl (more reliable than Scrapling for WeChat)."""
+    import subprocess
+
+    print("[fetch] Detected WeChat URL, using curl fallback...")
+
+    headers = [
+        '-H', 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        '-H', 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        '-H', 'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
+    ]
+
+    try:
+        result = subprocess.run(
+            ['curl', '-s', '-L', '-k', '--max-time', '30'] + headers + [url],
+            capture_output=True,
+            text=True,
+            timeout=35
+        )
+
+        if result.returncode == 0 and len(result.stdout) > 1000:
+            return result.stdout
+        else:
+            print(f"[fetch] curl failed: return code {result.returncode}, output length: {len(result.stdout)}")
+            return None
+    except Exception as e:
+        print(f"[fetch] curl error: {e}")
+        return None
+
+
+def extract_wechat_content(html: str, url: str) -> dict:
+    """Extract content from WeChat article HTML."""
+    result = {
+        'title': '',
+        'content': '',
+        'author': '',
+        'date': '',
+        'url': url,
+    }
+
+    # Extract title
+    title_match = re.search(r'var\s+msg_title\s*=\s*["\']([^"\']+)["\']', html)
+    if not title_match:
+        title_match = re.search(r'<h1[^>]*>([^<]+)</h1>', html)
+    if title_match:
+        result['title'] = title_match.group(1).strip()
+
+    # Extract author
+    author_match = re.search(r'var\s+nickname\s*=\s*["\']([^"\']+)["\']', html)
+    if not author_match:
+        author_match = re.search(r'class="rich_media_meta_nickname"[^>]*>([^<]+)<', html)
+    if author_match:
+        result['author'] = author_match.group(1).strip()
+
+    # Extract date
+    date_match = re.search(r'var\s+ct\s*=\s*["\'](\d+)["\']', html)
+    if date_match:
+        import datetime
+        timestamp = int(date_match.group(1))
+        result['date'] = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+    # Extract content from #js_content
+    content_match = re.search(r'id="js_content"[^>]*>(.*?)</div>\s*</div>\s*<div[^>]*class="rich_media_tool"', html, re.DOTALL)
+    if not content_match:
+        content_match = re.search(r'id="js_content"[^>]*>(.*?)<!--', html, re.DOTALL)
+    if not content_match:
+        content_match = re.search(r'id="js_content"[^>]*>(.*?)</div>', html, re.DOTALL)
+
+    if content_match:
+        content_html = content_match.group(1)
+        # Convert HTML to markdown-like text
+        content = html_to_markdown(content_html)
+        result['content'] = content
+    else:
+        # Fallback: try to find any substantial content
+        print("[extract] Could not find #js_content, trying fallback...")
+        # Look for paragraphs
+        paragraphs = re.findall(r'<p[^>]*>(.*?)</p>', html, re.DOTALL)
+        if paragraphs:
+            result['content'] = '\n\n'.join(html_to_markdown(p) for p in paragraphs if len(p.strip()) > 20)
+
+    return result
+
+
+def html_to_markdown(html: str) -> str:
+    """Convert HTML to markdown."""
+    import re
+
+    # Remove HTML comments
+    text = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+
+    # Handle headings
+    for i in range(6, 0, -1):
+        text = re.sub(f'<h{i}[^>]*>(.*?)</h{i}>', r'\n' + '#' * i + r' \1\n', text, flags=re.DOTALL)
+
+    # Handle bold/strong
+    text = re.sub(r'<(strong|b)[^>]*>(.*?)</\1>', r'**\2**', text, flags=re.DOTALL)
+
+    # Handle italic/em
+    text = re.sub(r'<(em|i)[^>]*>(.*?)</\1>', r'*\2*', text, flags=re.DOTALL)
+
+    # Handle links
+    text = re.sub(r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', r'[\2](\1)', text, flags=re.DOTALL)
+
+    # Handle images
+    text = re.sub(r'<img[^>]*data-src="([^"]*)"[^>]*/?\s*>', r'![](\1)', text)
+    text = re.sub(r'<img[^>]*src="([^"]*)"[^>]*/?\s*>', r'![](\1)', text)
+
+    # Handle lists
+    text = re.sub(r'<li[^>]*>(.*?)</li>', r'- \1', text, flags=re.DOTALL)
+    text = re.sub(r'<ul[^>]*>(.*?)</ul>', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'<ol[^>]*>(.*?)</ol>', r'\1', text, flags=re.DOTALL)
+
+    # Handle blockquotes
+    text = re.sub(r'<blockquote[^>]*>(.*?)</blockquote>', r'\n> \1\n', text, flags=re.DOTALL)
+
+    # Handle code blocks
+    text = re.sub(r'<pre[^>]*>(.*?)</pre>', r'\n```\n\1\n```\n', text, flags=re.DOTALL)
+    text = re.sub(r'<code[^>]*>(.*?)</code>', r'`\1`', text, flags=re.DOTALL)
+
+    # Handle paragraphs
+    text = re.sub(r'<p[^>]*>(.*?)</p>', r'\n\1\n', text, flags=re.DOTALL)
+
+    # Handle line breaks
+    text = re.sub(r'<br\s*/?\s*>', '\n', text)
+
+    # Handle sections/divs
+    text = re.sub(r'<(section|div)[^>]*>(.*?)</\1>', r'\n\2\n', text, flags=re.DOTALL)
+
+    # Remove remaining HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+
+    # Decode HTML entities
+    text = text.replace('&amp;', '&')
+    text = text.replace('&lt;', '<')
+    text = text.replace('&gt;', '>')
+    text = text.replace('&quot;', '"')
+    text = text.replace('&#39;', "'")
+    text = text.replace('&nbsp;', ' ')
+
+    # Clean up whitespace
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r' +', ' ', text)
+
+    return text.strip()
+
+
 def fetch_page(url: str, stealth: bool = False, headless: bool = True):
     """Fetch page using Scrapling."""
     try:
@@ -363,23 +515,38 @@ Examples:
     print(f"[info] Stealth: {args.stealth}")
     print("")
 
-    # Fetch page
-    page = fetch_page(args.url, stealth=args.stealth, headless=args.headless)
-    if not page:
-        print("[error] Failed to fetch page")
-        sys.exit(1)
+    # Special handling for WeChat articles
+    article = None
+    if is_wechat_url(args.url):
+        print("[fetch] WeChat article detected, trying curl first...")
+        html = fetch_wechat_with_curl(args.url)
+        if html:
+            article = extract_wechat_content(html, args.url)
+            if article['content']:
+                print(f"[extract] Successfully extracted WeChat article ({len(article['content'])} chars)")
+            else:
+                print("[extract] curl fetched but extraction failed, falling back to Scrapling...")
+                article = None
 
-    # Save raw HTML if requested
-    if args.raw:
-        raw_path = output_path.replace('.md', '.html')
-        with open(raw_path, 'w', encoding='utf-8') as f:
-            f.write(page.html if hasattr(page, 'html') else str(page))
-        print(f"[save] Saved raw HTML to: {raw_path}")
-        return
+    # Fallback to Scrapling if WeChat extraction failed or not WeChat
+    if article is None:
+        # Fetch page
+        page = fetch_page(args.url, stealth=args.stealth, headless=args.headless)
+        if not page:
+            print("[error] Failed to fetch page")
+            sys.exit(1)
 
-    # Extract article
-    print("[extract] Extracting article content...")
-    article = extract_with_fallbacks(page, args.url, args.selector)
+        # Save raw HTML if requested
+        if args.raw:
+            raw_path = output_path.replace('.md', '.html')
+            with open(raw_path, 'w', encoding='utf-8') as f:
+                f.write(page.html if hasattr(page, 'html') else str(page))
+            print(f"[save] Saved raw HTML to: {raw_path}")
+            return
+
+        # Extract article
+        print("[extract] Extracting article content...")
+        article = extract_with_fallbacks(page, args.url, args.selector)
 
     # Convert to markdown
     markdown = to_markdown(article)
