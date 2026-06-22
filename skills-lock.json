@@ -7,6 +7,12 @@
       "skillPath": "SKILL.md",
       "computedHash": "6ca3bddfee9d89bc7dbac4e0cf52b5fc3101ef9330f4d8129719843aaa899184"
     },
+    "scrapling-official": {
+      "source": "D4Vinci/Scrapling",
+      "sourceType": "github",
+      "skillPath": "agent-skill/Scrapling-Skill/SKILL.md",
+      "computedHash": "060ec0d603d67b988c42eeb2a371c144729474b4f296fdbca4cf57c2500c80b7"
+    },
     "skill-creator": {
       "source": "anthropics/skills",
       "sourceType": "github",
