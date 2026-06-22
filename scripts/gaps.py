@@ -48,9 +48,9 @@ def detect_gaps(wiki_dir: str = "."):
     single_source = []
     for name, info in notes.items():
         if info["subdir"] == "concepts":
-            # Count sources linking to this concept
-            source_count = sum(1 for s in info["links"]
-                             if notes.get(s, {}).get("subdir") == "sources")
+            # Count how many sources reference this concept (inbound links)
+            source_count = sum(1 for ref in all_referenced.get(name, [])
+                             if notes.get(ref, {}).get("subdir") == "sources")
             if source_count <= 1:
                 fm = info["fm"]
                 strength = fm.get("evidence_strength", "unknown")

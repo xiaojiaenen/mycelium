@@ -2,7 +2,10 @@
 """Generate Obsidian Kanban board for research tasks."""
 import argparse
 from pathlib import Path
-from datetime import date
+
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import TODAY
 
 
 KANBAN_TEMPLATE = """---
@@ -11,7 +14,7 @@ kanban-plugin: basic
 
 ## 📋 待读 (To Read)
 
-- [ ]
+- [ ] Add sources to read here
 - [ ]
 
 ## 📖 阅读中 (Reading)
@@ -36,10 +39,12 @@ kanban-plugin: basic
 
 ---
 kanban-plugin: basic
+
+> Created: {date}
 """
 
 
-def create_kanban(wiki_dir: str = "."):
+def create_kanban(wiki_dir: str = ".", force: bool = False):
     """Create kanban board in wiki."""
     base = Path(wiki_dir)
     wiki = base / "wiki"
@@ -48,13 +53,15 @@ def create_kanban(wiki_dir: str = "."):
 
     filepath = meta_dir / "kanban.md"
 
-    if filepath.exists():
+    if filepath.exists() and not force:
         print(f"📖 Kanban already exists: {filepath}")
+        print(f"   Use --force to recreate")
         content = filepath.read_text(encoding='utf-8')
         print(content)
         return
 
-    filepath.write_text(KANBAN_TEMPLATE, encoding='utf-8')
+    content = KANBAN_TEMPLATE.replace("{date}", TODAY)
+    filepath.write_text(content, encoding='utf-8')
     print(f"✅ Created: {filepath}")
     print(f"   Open in Obsidian with Kanban plugin")
 
@@ -62,8 +69,9 @@ def create_kanban(wiki_dir: str = "."):
 def main():
     parser = argparse.ArgumentParser(description="Create research kanban board")
     parser.add_argument("--dir", "-d", default=".", help="Wiki root directory")
+    parser.add_argument("--force", "-f", action="store_true", help="Recreate kanban even if exists")
     args = parser.parse_args()
-    create_kanban(args.dir)
+    create_kanban(args.dir, args.force)
 
 
 if __name__ == "__main__":

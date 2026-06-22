@@ -13,37 +13,8 @@ from utils import (
     EXCALIDRAW_SOURCE, EXCALIDRAW_CANVAS_WIDTH, EXCALIDRAW_CANVAS_HEIGHT,
     EXCALIDRAW_LAYOUT_RADIUS, EXCALIDRAW_SIMULATION_ITERATIONS,
     EXCALIDRAW_REPULSION, EXCALIDRAW_FORCE_STEP, EXCALIDRAW_IDEAL_EDGE,
-    EXCALIDRAW_EDGE_ELASTICITY, TYPE_COLORS,
-    parse_frontmatter, extract_wikilinks,
+    EXCALIDRAW_EDGE_ELASTICITY, TYPE_COLORS, build_graph,
 )
-
-
-def build_graph(wiki_dir: Path) -> dict:
-    """Build node/edge graph from wiki."""
-    nodes = {}
-    edges = []
-
-    for subdir in ['sources', 'concepts', 'entities', 'comparisons', 'questions', 'contradictions']:
-        dir_path = wiki_dir / subdir
-        if not dir_path.exists():
-            continue
-        for md_file in dir_path.glob('*.md'):
-            content = md_file.read_text(encoding='utf-8')
-            fm = parse_frontmatter(content)
-            name = fm.get('title', md_file.stem)
-            note_type = fm.get('type', subdir.rstrip('s'))
-            links = extract_wikilinks(content)
-
-            nodes[md_file.stem] = {
-                "name": name,
-                "type": note_type,
-                "links": links,
-            }
-
-            for link in links:
-                edges.append({"source": md_file.stem, "target": link})
-
-    return {"nodes": nodes, "edges": edges}
 
 
 def force_layout(nodes: dict, edges: list, width: int = 1200, height: int = 800) -> dict:
@@ -120,16 +91,6 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
     # Layout
     positions = force_layout(nodes, edges)
 
-    # Color map for note types
-    colors = {
-        "source": "#a5d8ff",
-        "concept": "#b2f2bb",
-        "entity": "#ffec99",
-        "comparison": "#ffc9c9",
-        "question": "#d0bfff",
-        "contradiction": "#ffd8a8",
-    }
-
     # Build Excalidraw elements
     elements = []
     id_counter = 0
@@ -143,7 +104,7 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
         id_counter += 1
         node_ids[name] = eid
         pos = positions[name]
-        color = colors.get(info["type"], "#e9ecef")
+        color = TYPE_COLORS.get(info["type"], "#e9ecef")
 
         # Rectangle (the box)
         elements.append({

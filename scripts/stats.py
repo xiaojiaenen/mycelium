@@ -4,12 +4,11 @@ import re
 import json
 import argparse
 from pathlib import Path
-from datetime import date, datetime
 from collections import Counter, defaultdict
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from utils import parse_frontmatter, TODAY
+from utils import parse_frontmatter, TODAY, TYPE_COLORS, WIKI_SUBDIRS
 
 
 def collect_stats(wiki_dir: Path) -> dict:
@@ -31,8 +30,7 @@ def collect_stats(wiki_dir: Path) -> dict:
         "evolved_concepts": 0,
     }
 
-    all_notes = []
-    for subdir in ['sources', 'concepts', 'entities', 'comparisons', 'questions', 'contradictions']:
+    for subdir in WIKI_SUBDIRS:
         dir_path = wiki / subdir
         if not dir_path.exists():
             continue
@@ -75,8 +73,6 @@ def collect_stats(wiki_dir: Path) -> dict:
                 elif evidence == 'weak':
                     stats["weak_evidence"] += 1
 
-            all_notes.append({"fm": fm, "links": links})
-
     if stats["total_notes"] > 0:
         stats["avg_links_per_note"] = round(stats["total_links"] / stats["total_notes"], 1)
 
@@ -88,100 +84,301 @@ def generate_dashboard(wiki_dir: str = ".", output: str = None):
     base = Path(wiki_dir)
     stats = collect_stats(base)
 
-    # Build HTML
+    # Prepare chart data
+    type_data = []
+    for note_type, count in stats["by_type"].most_common():
+        type_data.append({
+            "label": note_type.title(),
+            "value": count,
+            "color": TYPE_COLORS.get(note_type, "#e9ecef"),
+        })
+
+    status_data = []
+    for status, count in stats["by_status"].most_common():
+        status_data.append({"label": status, "value": count})
+
+    month_data = []
+    for month in sorted(stats["by_month"].keys()):
+        month_data.append({"label": month, "value": stats["by_month"][month]})
+
+    tag_data = []
+    for tag, count in stats["top_tags"].most_common(15):
+        tag_data.append({"label": tag, "value": count})
+
+    # Build HTML with modern design
     html = f"""<!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mycelium Dashboard</title>
 <style>
+:root {{
+    --bg-primary: #0f0f1a;
+    --bg-secondary: #1a1b2e;
+    --bg-card: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.08);
+    --text-primary: #e9ecef;
+    --text-secondary: #8b8fa3;
+    --accent: #7aa2f7;
+    --accent-green: #9ece6a;
+    --accent-orange: #ff9e64;
+    --accent-red: #f7768e;
+}}
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-body {{ font-family: system-ui, sans-serif; background: #1a1b26; color: #fff; padding: 30px; }}
-h1 {{ margin-bottom: 30px; font-size: 24px; }}
-.grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }}
-.card {{ background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; text-align: center; }}
-.card .value {{ font-size: 36px; font-weight: bold; color: #7aa2f7; }}
-.card .label {{ font-size: 13px; color: #aaa; margin-top: 5px; }}
-.section {{ margin-bottom: 30px; }}
-.section h2 {{ font-size: 18px; margin-bottom: 15px; color: #7aa2f7; }}
-.bar {{ display: flex; align-items: center; margin: 8px 0; }}
-.bar-label {{ width: 120px; font-size: 13px; color: #aaa; }}
-.bar-fill {{ height: 20px; border-radius: 4px; min-width: 2px; }}
-.bar-value {{ margin-left: 10px; font-size: 13px; color: #aaa; }}
-.tag {{ display: inline-block; background: rgba(122,162,247,0.2); color: #7aa2f7;
-         padding: 4px 10px; border-radius: 12px; margin: 3px; font-size: 12px; }}
+body {{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 40px;
+    min-height: 100vh;
+}}
+.container {{ max-width: 1200px; margin: 0 auto; }}
+h1 {{
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #7aa2f7, #bb9af7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}}
+.subtitle {{ color: var(--text-secondary); margin-bottom: 40px; font-size: 14px; }}
+
+.stats-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+}}
+.stat-card {{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+}}
+.stat-card:hover {{
+    background: rgba(255,255,255,0.05);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}}
+.stat-value {{
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+}}
+.stat-label {{
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}}
+
+.charts-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+}}
+.chart-card {{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+}}
+.chart-title {{
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}}
+
+.bar {{ display: flex; align-items: center; margin: 10px 0; }}
+.bar-label {{
+    width: 120px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}}
+.bar-track {{
+    flex: 1;
+    height: 24px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}}
+.bar-fill {{
+    height: 100%;
+    border-radius: 6px;
+    min-width: 4px;
+    transition: width 0.6s ease;
+}}
+.bar-value {{
+    width: 50px;
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-left: 12px;
+}}
+
+.tags-container {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+.tag {{
+    display: inline-flex;
+    align-items: center;
+    background: rgba(122,162,247,0.15);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}}
+.tag:hover {{
+    background: rgba(122,162,247,0.25);
+    transform: scale(1.05);
+}}
+.tag-count {{
+    font-size: 11px;
+    opacity: 0.7;
+    margin-left: 6px;
+}}
+
+.empty-state {{
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}}
+
+.footer {{
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+}}
 </style>
 </head>
 <body>
-<h1>🍄 Mycelium Dashboard</h1>
+<div class="container">
+    <h1>🍄 Mycelium Dashboard</h1>
+    <p class="subtitle">Knowledge Base Analytics • {TODAY}</p>
 
-<div class="grid">
-    <div class="card"><div class="value">{stats['total_notes']}</div><div class="label">Total Notes</div></div>
-    <div class="card"><div class="value">{stats['sources_count']}</div><div class="label">Sources</div></div>
-    <div class="card"><div class="value">{stats['concepts_count']}</div><div class="label">Concepts</div></div>
-    <div class="card"><div class="value">{stats['avg_links_per_note']}</div><div class="label">Avg Links/Note</div></div>
-</div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{stats['total_notes']}</div>
+            <div class="stat-label">Total Notes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['sources_count']}</div>
+            <div class="stat-label">Sources</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['concepts_count']}</div>
+            <div class="stat-label">Concepts</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['avg_links_per_note']}</div>
+            <div class="stat-label">Avg Links/Note</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['evolved_concepts']}</div>
+            <div class="stat-label">Evolved Concepts</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['strong_evidence']}</div>
+            <div class="stat-label">Strong Evidence</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['weak_evidence']}</div>
+            <div class="stat-label">Weak Evidence</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{stats['total_links']}</div>
+            <div class="stat-label">Total Links</div>
+        </div>
+    </div>
 
-<div class="grid">
-    <div class="card"><div class="value">{stats['evolved_concepts']}</div><div class="label">Evolved Concepts</div></div>
-    <div class="card"><div class="value">{stats['strong_evidence']}</div><div class="label">Strong Evidence</div></div>
-    <div class="card"><div class="value">{stats['weak_evidence']}</div><div class="label">Weak Evidence</div></div>
-    <div class="card"><div class="value">{stats['total_links']}</div><div class="label">Total Links</div></div>
-</div>
-
-<div class="section">
-    <h2>📊 By Type</h2>
+    <div class="charts-grid">
 """
 
-    type_colors = {"source": "#a5d8ff", "concept": "#b2f2bb", "entity": "#ffec99",
-                   "comparison": "#ffc9c9", "question": "#d0bfff", "contradiction": "#ffd8a8"}
-
-    max_count = max(stats["by_type"].values()) if stats["by_type"] else 1
-    for note_type, count in stats["by_type"].most_common():
-        color = type_colors.get(note_type, "#e9ecef")
-        width = int(count / max_count * 100)
-        html += f'    <div class="bar"><span class="bar-label">{note_type}</span><div class="bar-fill" style="width:{width}%;background:{color}"></div><span class="bar-value">{count}</span></div>\n'
-
-    html += """</div>
-
-<div class="section">
-    <h2>📋 By Status</h2>
+    # Type distribution chart
+    if type_data:
+        max_val = max(d["value"] for d in type_data)
+        html += """        <div class="chart-card">
+            <div class="chart-title">📊 Notes by Type</div>
 """
-
-    max_count = max(stats["by_status"].values()) if stats["by_status"] else 1
-    for status, count in stats["by_status"].most_common():
-        width = int(count / max_count * 100)
-        html += f'    <div class="bar"><span class="bar-label">{status}</span><div class="bar-fill" style="width:{width}%;background:#7aa2f7"></div><span class="bar-value">{count}</span></div>\n'
-
-    html += """</div>
-
-<div class="section">
-    <h2>🏷️ Top Tags</h2>
-    <div>
+        for d in type_data:
+            width = max(int(d["value"] / max_val * 100), 3) if max_val > 0 else 3
+            html += f"""            <div class="bar">
+                <span class="bar-label">{d['label']}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:{width}%;background:{d['color']}"></div>
+                </div>
+                <span class="bar-value">{d['value']}</span>
+            </div>
 """
+        html += "        </div>\n"
 
-    for tag, count in stats["top_tags"].most_common(15):
-        html += f'        <span class="tag">{tag} ({count})</span>\n'
+    # Status distribution chart
+    if status_data:
+        max_val = max(d["value"] for d in status_data)
+        html += """        <div class="chart-card">
+            <div class="chart-title">📋 Notes by Status</div>
+"""
+        status_colors = {
+            'read': '#9ece6a', 'reading': '#ff9e64', 'to-read': '#7aa2f7',
+            'processed': '#bb9af7', 'unprocessed': '#f7768e',
+        }
+        for d in status_data:
+            width = max(int(d["value"] / max_val * 100), 3) if max_val > 0 else 3
+            color = status_colors.get(d['label'], '#7aa2f7')
+            html += f"""            <div class="bar">
+                <span class="bar-label">{d['label']}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:{width}%;background:{color}"></div>
+                </div>
+                <span class="bar-value">{d['value']}</span>
+            </div>
+"""
+        html += "        </div>\n"
+
+    # Monthly growth chart
+    if month_data:
+        max_val = max(d["value"] for d in month_data)
+        html += """        <div class="chart-card">
+            <div class="chart-title">📅 Monthly Growth</div>
+"""
+        for d in month_data[-12:]:  # Last 12 months
+            width = max(int(d["value"] / max_val * 100), 3) if max_val > 0 else 3
+            html += f"""            <div class="bar">
+                <span class="bar-label">{d['label']}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:{width}%;background:var(--accent-green)"></div>
+                </div>
+                <span class="bar-value">{d['value']}</span>
+            </div>
+"""
+        html += "        </div>\n"
+
+    # Tags chart
+    if tag_data:
+        html += """        <div class="chart-card">
+            <div class="chart-title">🏷️ Top Tags</div>
+            <div class="tags-container">
+"""
+        for d in tag_data:
+            html += f'                <span class="tag">{d["label"]}<span class="tag-count">({d["value"]})</span></span>\n'
+        html += """            </div>
+        </div>
+"""
 
     html += """    </div>
-</div>
 
-<div class="section">
-    <h2>📅 Monthly Growth</h2>
-"""
-
-    if stats["by_month"]:
-        months = sorted(stats["by_month"].keys())
-        max_count = max(stats["by_month"].values())
-        for month in months:
-            count = stats["by_month"][month]
-            width = int(count / max_count * 100)
-            html += f'    <div class="bar"><span class="bar-label">{month}</span><div class="bar-fill" style="width:{width}%;background:#9ece6a"></div><span class="bar-value">{count}</span></div>\n'
-
-    html += f"""</div>
-
-<div style="text-align:center;color:#555;margin-top:30px;font-size:12px">
-    Generated: {TODAY} | Mycelium Knowledge Base
+    <div class="footer">
+        Generated by Mycelium Knowledge Base System
+    </div>
 </div>
 </body>
 </html>"""

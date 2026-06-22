@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Generate daily note for Mycelium wiki."""
 import argparse
+import sys
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import TODAY
 
 
 DAILY_TEMPLATE = """---
@@ -32,8 +36,9 @@ status: evergreen
 
 ## 🔗 Connections
 <!-- How does today's learning connect to existing knowledge? -->
+<!-- Example: [[concept-name]] — what I learned about it -->
 
-- [[existing-concept]] — new insight
+-
 
 ## 📝 Notes
 <!-- Free-form notes -->
@@ -48,21 +53,21 @@ tags: [weekly]
 status: evergreen
 ---
 
-# Week {week_num} ({date})
+# Week {week_num} ({start_date} ~ {end_date})
 
-## Summary
+## 📊 Summary
 <!-- What were the main themes this week? -->
 
-## Sources Ingested
+## 📚 Sources Ingested
 <!-- List all sources from this week -->
 
-## Key Concepts Learned
+## 💡 Key Concepts Learned
 <!-- New concepts added to wiki -->
 
-## Open Questions
+## ❓ Open Questions
 <!-- Questions that remain unanswered -->
 
-## Next Week
+## 📅 Next Week
 <!-- What to focus on next? -->
 
 """
@@ -76,7 +81,12 @@ def create_daily(wiki_dir: str = ".", target_date: str = None):
     daily_dir.mkdir(parents=True, exist_ok=True)
 
     if target_date:
-        d = datetime.strptime(target_date, "%Y-%m-%d").date()
+        try:
+            d = datetime.strptime(target_date, "%Y-%m-%d").date()
+        except ValueError:
+            print(f"❌ Invalid date format: {target_date}")
+            print(f"   Expected: YYYY-MM-DD (e.g., 2026-06-22)")
+            sys.exit(1)
     else:
         d = date.today()
 
@@ -90,6 +100,13 @@ def create_daily(wiki_dir: str = ".", target_date: str = None):
         return
 
     content = DAILY_TEMPLATE.replace("{date}", d.isoformat())
+
+    # Add navigation links
+    prev_date = (d - timedelta(days=1)).isoformat()
+    next_date = (d + timedelta(days=1)).isoformat()
+    nav = f"\n---\n\n← [[{prev_date}]] | [[{next_date}]] →\n"
+    content = content.rstrip() + nav
+
     filepath.write_text(content, encoding='utf-8')
     print(f"✅ Created: {filepath}")
 
@@ -102,11 +119,21 @@ def create_weekly(wiki_dir: str = ".", target_date: str = None):
     weekly_dir.mkdir(parents=True, exist_ok=True)
 
     if target_date:
-        d = datetime.strptime(target_date, "%Y-%m-%d").date()
+        try:
+            d = datetime.strptime(target_date, "%Y-%m-%d").date()
+        except ValueError:
+            print(f"❌ Invalid date format: {target_date}")
+            print(f"   Expected: YYYY-MM-DD (e.g., 2026-06-22)")
+            sys.exit(1)
     else:
         d = date.today()
 
     week_num = d.isocalendar()[1]
+    # Calculate week start (Monday) and end (Sunday)
+    weekday = d.weekday()
+    start_date = d - timedelta(days=weekday)
+    end_date = start_date + timedelta(days=6)
+
     filename = f"week-{week_num:02d}.md"
     filepath = weekly_dir / filename
 
@@ -116,7 +143,11 @@ def create_weekly(wiki_dir: str = ".", target_date: str = None):
         print(content)
         return
 
-    content = WEEKLY_TEMPLATE.replace("{week_num}", str(week_num)).replace("{date}", d.isoformat())
+    content = WEEKLY_TEMPLATE.replace("{week_num}", str(week_num))
+    content = content.replace("{date}", d.isoformat())
+    content = content.replace("{start_date}", start_date.isoformat())
+    content = content.replace("{end_date}", end_date.isoformat())
+
     filepath.write_text(content, encoding='utf-8')
     print(f"✅ Created: {filepath}")
 

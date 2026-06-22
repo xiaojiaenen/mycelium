@@ -159,6 +159,63 @@ def parse_frontmatter(content: str) -> dict:
     return fm
 
 
+def parse_frontmatter_with_body(content: str) -> tuple:
+    """Extract YAML frontmatter and body from markdown content.
+
+    Returns:
+        (frontmatter_dict, body_text) tuple
+    """
+    match = re.match(r'^---\n(.*?)\n---\n?(.*)', content, re.DOTALL)
+    if not match:
+        return {}, content
+    fm = {}
+    for line in match.group(1).split('\n'):
+        if ':' in line:
+            key, _, val = line.partition(':')
+            val = val.strip().strip('"').strip("'")
+            if val.startswith('[') and val.endswith(']'):
+                val = [v.strip().strip('"').strip("'") for v in val[1:-1].split(',') if v.strip()]
+            fm[key.strip()] = val
+    return fm, match.group(2)
+
+
+def build_graph(wiki_dir: Path) -> dict:
+    """Build node/edge graph from wiki. Shared by graph.py, excalidraw.py, canvas.py.
+
+    Returns:
+        {"nodes": {name: {"name", "type", "links", "subdir"}}, "edges": [{"source", "target"}]}
+    """
+    nodes = {}
+    edges = []
+
+    for subdir in ['sources', 'concepts', 'entities', 'comparisons', 'questions', 'contradictions']:
+        dir_path = wiki_dir / subdir
+        if not dir_path.exists():
+            continue
+        for md_file in dir_path.glob('*.md'):
+            content = md_file.read_text(encoding='utf-8')
+            fm = parse_frontmatter(content)
+            name = fm.get('title', md_file.stem)
+            note_type = fm.get('type', subdir.rstrip('s'))
+            links = extract_wikilinks(content)
+
+            nodes[md_file.stem] = {
+                "name": name,
+                "type": note_type,
+                "links": links,
+                "subdir": subdir,
+            }
+
+            for link in links:
+                edges.append({"source": md_file.stem, "target": link})
+
+    return {"nodes": nodes, "edges": edges}
+
+
+# Wiki subdirectories for scanning
+WIKI_SUBDIRS = ['sources', 'concepts', 'entities', 'comparisons', 'questions', 'contradictions']
+
+
 def extract_wikilinks(content: str) -> list:
     """Extract [[wikilinks]] from markdown content."""
     return re.findall(r'\[\[([^\]]+)\]\]', content)
