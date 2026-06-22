@@ -203,7 +203,8 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
             "lineHeight": 1.25,
         })
 
-    # Create edges (arrows)
+    # Create edges (arrows) and track bindings
+    edge_bindings = {}  # node_id -> list of arrow ids
     for edge in edges:
         s, t = edge["source"], edge["target"]
         if s not in node_ids or t not in node_ids:
@@ -212,6 +213,10 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
         id_counter += 1
         s_pos = positions[s]
         t_pos = positions[t]
+
+        # Track bindings for nodes
+        edge_bindings.setdefault(s, []).append(eid)
+        edge_bindings.setdefault(t, []).append(eid)
 
         elements.append({
             "id": eid,
@@ -237,11 +242,30 @@ def generate_excalidraw(wiki_dir: str, output: str = None):
             "locked": False,
             "points": [[0, 0], [t_pos["x"] - s_pos["x"], t_pos["y"] - s_pos["y"]]],
             "lastCommittedPoint": None,
-            "startBinding": None,
-            "endBinding": None,
+            "startBinding": {
+                "elementId": node_ids[s],
+                "focus": 0,
+                "gap": 1,
+            },
+            "endBinding": {
+                "elementId": node_ids[t],
+                "focus": 0,
+                "gap": 1,
+            },
             "startArrowhead": None,
             "endArrowhead": "arrow",
         })
+
+    # Update node boundElements to include connected arrows
+    for elem in elements:
+        if elem["type"] == "rectangle" and elem["id"] in [node_ids[n] for n in nodes]:
+            # Find which node this is
+            for node_name, node_eid in node_ids.items():
+                if node_eid == elem["id"]:
+                    arrow_ids = edge_bindings.get(node_name, [])
+                    elem["boundElements"] = [{"id": f"text_{elem['id'].split('_')[1]}", "type": "text"}]
+                    elem["boundElements"].extend([{"id": aid, "type": "arrow"} for aid in arrow_ids])
+                    break
 
     # Build Excalidraw file
     excalidraw = {
